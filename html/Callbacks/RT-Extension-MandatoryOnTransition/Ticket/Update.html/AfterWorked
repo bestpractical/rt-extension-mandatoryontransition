@@ -1,0 +1,17 @@
+<%args>
+$Ticket
+</%args>
+<%init>
+my ($core, $cfs) = RT::Extension::MandatoryOnTransition->RequiredFields(
+    Ticket  => $Ticket,
+    To      => $ARGS{'Status'} || $ARGS{'DefaultStatus'},
+);
+return unless @$cfs;
+</%init>
+%# 'Named' is handled by this extension in the MassageCustomFields callback
+<& /Ticket/Elements/EditCustomFields,
+    %ARGS,
+    TicketObj   => $Ticket,
+    InTable     => 1,
+    Named       => $cfs,
+    &>
