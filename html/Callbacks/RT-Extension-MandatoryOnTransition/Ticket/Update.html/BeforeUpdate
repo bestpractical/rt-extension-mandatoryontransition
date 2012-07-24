@@ -2,7 +2,7 @@
 $TicketObj
 $ARGSRef
 $skip_update
-$results
+$results => []
 </%args>
 <%init>
 my ($core, $cfs) = RT::Extension::MandatoryOnTransition->RequiredFields(
@@ -13,27 +13,15 @@ return unless @$core or @$cfs;
 
 my @errors;
 
-my @core_allowed    = qw(TimeWorked TimeTaken Content);
-my @core_ticket     = qw(TimeWorked);
-my %core_for_update = (
-    TimeWorked  => 'UpdateTimeWorked',
-    TimeTaken   => 'UpdateTimeWorked',
-    Content     => 'UpdateContent',
-);
-
 # Check core fields, after canonicalization for update
 for my $field (@$core) {
-    unless (grep { $_ eq $field } @core_allowed) {
-        RT->Logger->warning("Skipping unsupported core field '$field' during mandatory checks");
-        next;
-    }
-
     # Will we have a value on update?
-    my $arg = $core_for_update{$field} || $field;
+    my $arg = $RT::Extension::MandatoryOnTransition::CORE_FOR_UPDATE{$field} || $field;
     next if defined $ARGSRef->{$arg} and length $ARGSRef->{$arg};
 
     # Do we have a value currently?
-    next if grep { $_ eq $field } @core_ticket and $TicketObj->$field();
+    next if grep { $_ eq $field } @RT::Extension::MandatoryOnTransition::CORE_TICKET
+        and $TicketObj->$field();
 
     (my $label = $field) =~ s/(?<=[a-z])(?=[A-Z])/ /g;  # /
     push @errors, loc("[_1] is required when changing Status to [_2]", $label, $ARGSRef->{Status});

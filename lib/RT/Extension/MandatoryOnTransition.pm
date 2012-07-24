@@ -129,6 +129,10 @@ C<perldoc /opt/rt4/etc/RT_Config.pm>.
 
 =head1 IMPLEMENTATION DETAILS
 
+If you're just using this module on your own RT instance, you should stop
+reading now.  You don't need to know about the implementation details unless
+you're writing a patch against this extension.
+
 =cut
 
 $RT::Config::META{'MandatoryOnTransition'} = {
@@ -154,10 +158,47 @@ $RT::Config::META{'MandatoryOnTransition'} = {
     },
 };
 
-=head2 RequiredFields
+=head2 Package variables
+
+=over 4
+
+=item @CORE_SUPPORTED
+
+The core (basic) fields supported by the extension.  Anything else configured
+not in this list is stripped.
+
+=item @CORE_TICKET
+
+The core (basic) fields which should be called as methods on ticket objects to
+check for current values.
+
+=item %CORE_FOR_UPDATE
+
+A mapping which translates core fields into their form input names.  For
+example, Content is submitted as UpdateContent.
+
+=back
+
+If you're looking to add support for other core fields, you'll need to push
+into @CORE_SUPPORTED and possibly @CORE_TICKET.  You may also need to add a
+pair to %CORE_FOR_UPDATE.
+
+=cut
+
+our @CORE_SUPPORTED  = qw(Content TimeWorked TimeTaken);
+our @CORE_TICKET     = qw(TimeWorked);
+our %CORE_FOR_UPDATE = (
+    TimeWorked  => 'UpdateTimeWorked',
+    TimeTaken   => 'UpdateTimeWorked',
+    Content     => 'UpdateContent',
+);
+
+=head2 Methods
+
+=head3 RequiredFields
 
 Returns two array refs of required fields for the described status transition.
-The first is core fields, the second is CF names.  Returns nothing (C<return;>)
+The first is core fields, the second is CF names.  Returns empty array refs
 on error or if nothing is required.
 
 Takes a paramhash with the keys Ticket, Queue, From, and To.  Ticket should be
@@ -188,27 +229,29 @@ sub RequiredFields {
         $args{From}  ||= $args{Ticket}->Status;
     }
     my ($from, $to) = @args{qw(From To)};
-    return unless $from and $to;
+    return ([], []) unless $from and $to;
 
     my %config = $self->Config($args{Queue});
-    return unless %config;
+    return ([], []) unless %config;
 
     # No transition.
-    return if $from eq $to;
+    return ([], []) if $from eq $to;
 
     my $required = $config{"$from -> $to"}
                 || $config{"* -> $to"}
                 || $config{"$from -> *"}
                 || [];
 
-    my @core = grep { !/^CF\./i } @$required;
+    my %core_supported = map { $_ => 1 } @CORE_SUPPORTED;
+
+    my @core = grep { !/^CF\./i && $core_supported{$_} } @$required;
     my @cfs  =  map { /^CF\.(.+)$/i; $1; }
                grep { /^CF\./i } @$required;
 
     return (\@core, \@cfs);
 }
 
-=head2 Config
+=head3 Config
 
 Takes a queue name.  Returns a hashref for the given queue (possibly using the
 fallback rules) which contains keys of transitions and values of arrayrefs of
