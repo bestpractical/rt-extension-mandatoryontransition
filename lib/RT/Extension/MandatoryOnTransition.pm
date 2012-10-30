@@ -270,15 +270,43 @@ sub Config {
     return;
 }
 
-=head1 AUTHOR
+=head1 TODO
 
-Thomas Sibley <trs@bestpractical.com>
+=over 4
+
+=item Enforcement on Create
+
+Configuration syntax is tricky and goes hand in hand with functionality here.
+
+Do we allow separate field lists for on create, or re-use existing status
+transition syntax?  That is, does C<< * -> resolved >> mean "a newly created
+resolved ticket" too?
+
+Components affected:
+
+    index.html / QuickCreate
+    Create.html
+    SelfService
+    Mobile
+
+=item Enforcement on other update pages
+
+    SelfService - can't do it without patches to <form> POST + additional callbacks
+    Basics      - need to patch callback for skipping (at least)
+    Jumbo       - need to patch callback for skipping (at least)
+    Mobile      - n/a; doesn't show CFs on reply/update
+
+=back
 
 =head1 BUGS
 
 All bugs should be reported via
 L<http://rt.cpan.org/Public/Dist/Display.html?Name=RT-Extension-MandatoryOnTransition>
 or L<bug-RT-Extension-MandatoryOnTransition@rt.cpan.org>.
+
+=head1 AUTHOR
+
+Thomas Sibley <trs@bestpractical.com>
 
 =head1 LICENSE AND COPYRIGHT
 
