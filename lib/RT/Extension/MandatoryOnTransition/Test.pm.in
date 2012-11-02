@@ -35,6 +35,9 @@ Set( %MandatoryOnTransition,
     '*' => {
         'open -> resolved' => [qw(TimeWorked)]
     },
+    'General' => {
+        '* -> resolved' => ['TimeWorked', 'CF.Test Field']
+    },
 );
 CONFIG
 

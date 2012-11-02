@@ -2,7 +2,7 @@ use strict;
 use warnings;
 package RT::Extension::MandatoryOnTransition;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 =head1 NAME
 
@@ -249,6 +249,123 @@ sub RequiredFields {
                grep { /^CF\./i } @$required;
 
     return (\@core, \@cfs);
+}
+
+=head3 CheckMandatoryFields
+
+Pulls core and custom mandatory fields from the configuration and
+checks that they have a value set before transitioning to the
+requested status.
+
+Accepts a paramhash of values:
+    ARGSRef => Reference to Mason ARGS
+    Ticket => ticket object being updated
+    Queue  => Queue object for the queue in which a new ticket is being created
+    From   => Ticket status transitioning from
+    To     => Ticket status transitioning to
+
+Works for both create, where no ticket exists yet, and update on an
+existing ticket. ARGSRef is required for both.
+
+For create, you must also pass Queue, From, and To.
+
+Update requires only Ticket and To since From can be fetched from the
+ticket object.
+
+=cut
+
+sub CheckMandatoryFields {
+    my $self = shift;
+    my %args  = (
+        Ticket  => undef,
+        Queue   => undef,
+        From    => undef,
+        To      => undef,
+        @_,
+    );
+    my $ARGSRef = $args{'ARGSRef'};
+
+    my @errors;
+
+    my ($core, $cfs) = RT::Extension::MandatoryOnTransition->RequiredFields(
+        Ticket  => $args{'Ticket'},
+        Queue   => $args{'Queue'} ? $args{'Queue'}->Name : undef,
+        From    => $args{'From'},
+        To      => $args{'To'},
+    );
+
+    return \@errors unless @$core or @$cfs;
+
+    # Check core fields, after canonicalization for update
+    for my $field (@$core) {
+        # Will we have a value on update?
+        # If we have a Ticket, it's an update, so use the CORE_FOR_UPDATE values
+        # otherwise it's a create so use raw field value with no UPDATE prefix
+        my $arg = $args{'Ticket'} ? $RT::Extension::MandatoryOnTransition::CORE_FOR_UPDATE{$field} || $field
+                                  : $field;
+        next if defined $ARGSRef->{$arg} and length $ARGSRef->{$arg};
+
+        # Do we have a value currently?
+        # In Create the ticket hasn't been created yet.
+        next if grep { $_ eq $field } @RT::Extension::MandatoryOnTransition::CORE_TICKET
+          and ($args{'Ticket'} && $args{'Ticket'}->$field());
+
+        (my $label = $field) =~ s/(?<=[a-z])(?=[A-Z])/ /g; # /
+        push @errors,
+          HTML::Mason::Commands::loc("[_1] is required when changing Status to [_2]",
+                                     $label, $ARGSRef->{Status});
+    }
+
+    # Find the CFs we want
+    my $CFs = $args{'Ticket'} ? $args{'Ticket'}->CustomFields
+      : $args{'Queue'}->TicketCustomFields();
+
+    if ( not $CFs ){
+        $RT::Logger->error("Custom Fields object required to process mandatory custom fields");
+        return \@errors;
+    }
+
+    $CFs->Limit( FIELD => 'Name', VALUE => $_, SUBCLAUSE => 'names', ENTRYAGGREGRATOR => 'OR' )
+      for @$cfs;
+
+    # For constructing NamePrefix for both update and create
+    my $TicketId = $args{'Ticket'} ? $args{'Ticket'}->Id : '';
+
+    # Validate them
+    my $ValidCFs = $HTML::Mason::Commands::m->comp(
+                            '/Elements/ValidateCustomFields',
+                            CustomFields => $CFs,
+                            NamePrefix => "Object-RT::Ticket-".$TicketId."-CustomField-",
+                            ARGSRef => $ARGSRef
+                           );
+
+    # Check validation results and mandatory-ness
+    while (my $cf = $CFs->Next) {
+        # Is there a validation error?
+        if ( not $ValidCFs
+             and my $msg = $HTML::Mason::Commands::m->notes('InvalidField-' . $cf->Id)) {
+            push @errors, loc($cf->Name) . ': ' . $msg;
+            next;
+        }
+
+        # Do we have a submitted value for update?
+        my $arg   = "Object-RT::Ticket-".$TicketId."-CustomField-".$cf->Id."-Value";
+        my $value = ($ARGSRef->{"${arg}s-Magic"} and exists $ARGSRef->{"${arg}s"})
+          ? $ARGSRef->{$arg . "s"}
+            : $ARGSRef->{$arg};
+
+        next if defined $value and length $value;
+
+        # Is there a current value?  (Particularly important for Date/Datetime CFs
+        # since they don't submit a value on update.)
+        next if $args{'Ticket'} && $cf->ValuesForObject($args{'Ticket'})->Count;
+
+        push @errors,
+          HTML::Mason::Commands::loc("[_1] is required when changing Status to [_2]",
+                                     $cf->Name, $ARGSRef->{Status});
+    }
+
+    return \@errors;
 }
 
 =head3 Config

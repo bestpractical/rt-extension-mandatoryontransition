@@ -5,66 +5,16 @@ $skip_update
 $results => []
 </%args>
 <%init>
-my ($core, $cfs) = RT::Extension::MandatoryOnTransition->RequiredFields(
+
+my $errors_ref = RT::Extension::MandatoryOnTransition->CheckMandatoryFields(
+    ARGSRef => $ARGSRef,
     Ticket  => $TicketObj,
     To      => $ARGSRef->{'Status'},
 );
-return unless @$core or @$cfs;
 
-my @errors;
-
-# Check core fields, after canonicalization for update
-for my $field (@$core) {
-    # Will we have a value on update?
-    my $arg = $RT::Extension::MandatoryOnTransition::CORE_FOR_UPDATE{$field} || $field;
-    next if defined $ARGSRef->{$arg} and length $ARGSRef->{$arg};
-
-    # Do we have a value currently?
-    next if grep { $_ eq $field } @RT::Extension::MandatoryOnTransition::CORE_TICKET
-        and $TicketObj->$field();
-
-    (my $label = $field) =~ s/(?<=[a-z])(?=[A-Z])/ /g;  # /
-    push @errors, loc("[_1] is required when changing Status to [_2]", $label, $ARGSRef->{Status});
-}
-
-# Find the CFs we want
-my $CFs = $TicketObj->CustomFields;
-$CFs->Limit( FIELD => 'Name', VALUE => $_, SUBCLAUSE => 'names', ENTRYAGGREGRATOR => 'OR' )
-    for @$cfs;
-
-# Validate them
-my $ValidCFs = $m->comp(
-    '/Elements/ValidateCustomFields',
-    CustomFields => $CFs,
-    NamePrefix => "Object-RT::Ticket-".$TicketObj->Id."-CustomField-",
-    ARGSRef => $ARGSRef
-);
-
-# Check validation results and mandatory-ness
-while (my $cf = $CFs->Next) {
-    # Is there a validation error?
-    if ( not $ValidCFs and my $msg = $m->notes('InvalidField-' . $cf->Id)) {
-        push @errors, loc($cf->Name) . ': ' . $msg;
-        next;
-    }
-
-    # Do we have a submitted value for update?
-    my $arg   = "Object-RT::Ticket-".$TicketObj->Id."-CustomField-".$cf->Id."-Value";
-    my $value = ($ARGSRef->{"${arg}s-Magic"} and exists $ARGSRef->{"${arg}s"})
-                    ? $ARGSRef->{$arg . "s"}
-                    : $ARGSRef->{$arg};
-    next if defined $value and length $value;
-
-    # Is there a current value?  (Particularly important for Date/Datetime CFs
-    # since they don't submit a value on update.)
-    next if $cf->ValuesForObject($TicketObj)->Count;
-
-    push @errors, loc("[_1] is required when changing Status to [_2]", $cf->Name, $ARGSRef->{Status});
-}
-
-if (@errors) {
+if (@$errors_ref) {
     RT->Logger->debug("Preventing update because of missing mandatory fields");
     $$skip_update = 1;
-    push @$results, @errors;
+    push @$results, @$errors_ref;
 }
 </%init>
