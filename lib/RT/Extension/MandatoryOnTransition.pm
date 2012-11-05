@@ -287,7 +287,7 @@ sub CheckMandatoryFields {
 
     my @errors;
 
-    my ($core, $cfs) = RT::Extension::MandatoryOnTransition->RequiredFields(
+    my ($core, $cfs) = $self->RequiredFields(
         Ticket  => $args{'Ticket'},
         Queue   => $args{'Queue'} ? $args{'Queue'}->Name : undef,
         From    => $args{'From'},
@@ -301,13 +301,13 @@ sub CheckMandatoryFields {
         # Will we have a value on update?
         # If we have a Ticket, it's an update, so use the CORE_FOR_UPDATE values
         # otherwise it's a create so use raw field value with no UPDATE prefix
-        my $arg = $args{'Ticket'} ? $RT::Extension::MandatoryOnTransition::CORE_FOR_UPDATE{$field} || $field
+        my $arg = $args{'Ticket'} ? $CORE_FOR_UPDATE{$field} || $field
                                   : $field;
         next if defined $ARGSRef->{$arg} and length $ARGSRef->{$arg};
 
         # Do we have a value currently?
         # In Create the ticket hasn't been created yet.
-        next if grep { $_ eq $field } @RT::Extension::MandatoryOnTransition::CORE_TICKET
+        next if grep { $_ eq $field } @CORE_TICKET
           and ($args{'Ticket'} && $args{'Ticket'}->$field());
 
         (my $label = $field) =~ s/(?<=[a-z])(?=[A-Z])/ /g; # /
