@@ -284,8 +284,22 @@ sub CheckMandatoryFields {
         @_,
     );
     my $ARGSRef = $args{'ARGSRef'};
-
     my @errors;
+
+    # Some convenience variables set depending on what gets passed
+    my ($CFs, $CurrentUser);
+    if ( $args{'Ticket'} ){
+        $CFs = $args{'Ticket'}->CustomFields;
+        $CurrentUser = $args{'Ticket'}->CurrentUser();
+    }
+    elsif ( $args{'Queue'} ){
+        $CFs = $args{'Queue'}->TicketCustomFields;
+        $CurrentUser = $args{'Queue'}->CurrentUser();
+    }
+    else{
+        $RT::Logger->error("CheckMandatoryFields requires a Ticket object or a Queue object");
+        return \@errors;
+    }
 
     my ($core, $cfs) = $self->RequiredFields(
         Ticket  => $args{'Ticket'},
@@ -312,13 +326,9 @@ sub CheckMandatoryFields {
 
         (my $label = $field) =~ s/(?<=[a-z])(?=[A-Z])/ /g; # /
         push @errors,
-          HTML::Mason::Commands::loc("[_1] is required when changing Status to [_2]",
+          $CurrentUser->loc("[_1] is required when changing Status to [_2]",
                                      $label, $ARGSRef->{Status});
     }
-
-    # Find the CFs we want
-    my $CFs = $args{'Ticket'} ? $args{'Ticket'}->CustomFields
-      : $args{'Queue'}->TicketCustomFields();
 
     if ( not $CFs ){
         $RT::Logger->error("Custom Fields object required to process mandatory custom fields");
@@ -344,7 +354,7 @@ sub CheckMandatoryFields {
         # Is there a validation error?
         if ( not $ValidCFs
              and my $msg = $HTML::Mason::Commands::m->notes('InvalidField-' . $cf->Id)) {
-            push @errors, loc($cf->Name) . ': ' . $msg;
+            push @errors, $CurrentUser->loc($cf->Name) . ': ' . $msg;
             next;
         }
 
@@ -361,7 +371,7 @@ sub CheckMandatoryFields {
         next if $args{'Ticket'} && $cf->ValuesForObject($args{'Ticket'})->Count;
 
         push @errors,
-          HTML::Mason::Commands::loc("[_1] is required when changing Status to [_2]",
+          $CurrentUser->loc("[_1] is required when changing Status to [_2]",
                                      $cf->Name, $ARGSRef->{Status});
     }
 
