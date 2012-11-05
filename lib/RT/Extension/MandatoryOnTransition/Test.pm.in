@@ -33,10 +33,10 @@ sub import {
     $args{'config'} =<<CONFIG;
 Set( %MandatoryOnTransition,
     '*' => {
-        'open -> resolved' => [qw(TimeWorked)]
+        'open -> resolved' => [qw(TimeWorked TimeTaken)]
     },
     'General' => {
-        '* -> resolved' => ['TimeWorked', 'CF.Test Field']
+        '* -> resolved' => ['TimeWorked', 'TimeTaken', 'CF.Test Field']
     },
 );
 CONFIG

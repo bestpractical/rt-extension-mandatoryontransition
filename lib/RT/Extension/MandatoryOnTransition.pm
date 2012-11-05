@@ -312,11 +312,20 @@ sub CheckMandatoryFields {
 
     # Check core fields, after canonicalization for update
     for my $field (@$core) {
+
         # Will we have a value on update?
         # If we have a Ticket, it's an update, so use the CORE_FOR_UPDATE values
         # otherwise it's a create so use raw field value with no UPDATE prefix
-        my $arg = $args{'Ticket'} ? $CORE_FOR_UPDATE{$field} || $field
-                                  : $field;
+        my $arg;
+        if ( $args{'Ticket'} ){
+            $arg = $CORE_FOR_UPDATE{$field} || $field;
+        }
+        else{
+            # It's create. No TimeTaken on create form.
+            next if $field eq 'TimeTaken';
+            $arg = $field;
+        }
+
         next if defined $ARGSRef->{$arg} and length $ARGSRef->{$arg};
 
         # Do we have a value currently?
