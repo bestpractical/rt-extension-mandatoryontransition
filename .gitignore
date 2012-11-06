@@ -11,3 +11,5 @@ README
 *.bak
 *.swp
 /MYMETA.*
+/xt/tmp
+/lib/RT/Extension/MandatoryOnTransition/Test.pm
