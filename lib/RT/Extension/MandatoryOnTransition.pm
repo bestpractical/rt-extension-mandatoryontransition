@@ -165,7 +165,7 @@ $RT::Config::META{'MandatoryOnTransition'} = {
 =item @CORE_SUPPORTED
 
 The core (basic) fields supported by the extension.  Anything else configured
-not in this list is stripped.
+but not in this list is stripped.
 
 =item @CORE_TICKET
 
@@ -175,13 +175,21 @@ check for current values.
 =item %CORE_FOR_UPDATE
 
 A mapping which translates core fields into their form input names.  For
-example, Content is submitted as UpdateContent.
+example, Content is submitted as UpdateContent.  All fields must be mapped,
+even if they are named exactly as listed in @CORE_SUPPORTED.  A supported
+field which doesn't appear in the mapping is skipped, the implication being
+that it isn't available during update.
+
+=item %CORE_FOR_CREATE
+
+A mapping similar to %CORE_FOR_UPDATE but consulted during ticket creation.
+The same rules and restrictions apply.
 
 =back
 
 If you're looking to add support for other core fields, you'll need to push
-into @CORE_SUPPORTED and possibly @CORE_TICKET.  You may also need to add a
-pair to %CORE_FOR_UPDATE.
+into @CORE_SUPPORTED and possibly @CORE_TICKET.  You'll also need to add a
+pair to %CORE_FOR_UPDATE and/or %CORE_FOR_CREATE.
 
 =cut
 
@@ -191,6 +199,10 @@ our %CORE_FOR_UPDATE = (
     TimeWorked  => 'UpdateTimeWorked',
     TimeTaken   => 'UpdateTimeWorked',
     Content     => 'UpdateContent',
+);
+our %CORE_FOR_CREATE = (
+    TimeWorked  => 'TimeWorked',
+    Content     => 'Content',
 );
 
 =head2 Methods
@@ -313,19 +325,11 @@ sub CheckMandatoryFields {
     # Check core fields, after canonicalization for update
     for my $field (@$core) {
 
-        # Will we have a value on update?
-        # If we have a Ticket, it's an update, so use the CORE_FOR_UPDATE values
-        # otherwise it's a create so use raw field value with no UPDATE prefix
-        my $arg;
-        if ( $args{'Ticket'} ){
-            $arg = $CORE_FOR_UPDATE{$field} || $field;
-        }
-        else{
-            # It's create. No TimeTaken on create form.
-            next if $field eq 'TimeTaken';
-            $arg = $field;
-        }
-
+        # Will we have a value on update/create?
+        my $arg = $args{'Ticket'}
+            ? $CORE_FOR_UPDATE{$field}
+            : $CORE_FOR_CREATE{$field};
+        next unless $arg;
         next if defined $ARGSRef->{$arg} and length $ARGSRef->{$arg};
 
         # Do we have a value currently?
