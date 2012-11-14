@@ -82,6 +82,11 @@ Quick actions may be supported in a future release.
 
 May need root permissions
 
+=item patch -p1 < 4.0.8-additional-mobile-callbacks-plus-style.diff
+
+Run the above in your /opt/rt4 directory to patch RT if on version 4.0.8
+or older.
+
 =item Enable and configure this extension
 
 Add this line to </opt/rt4/etc/RT_SiteConfig.pm>:
