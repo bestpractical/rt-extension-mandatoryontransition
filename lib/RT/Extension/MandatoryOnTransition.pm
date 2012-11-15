@@ -430,16 +430,13 @@ resolved ticket" too?
 Components affected:
 
     index.html / QuickCreate
-    Create.html
     SelfService
-    Mobile
 
 =item Enforcement on other update pages
 
     SelfService - can't do it without patches to <form> POST + additional callbacks
     Basics      - need to patch callback for skipping (at least)
     Jumbo       - need to patch callback for skipping (at least)
-    Mobile      - n/a; doesn't show CFs on reply/update
 
 =back
 
