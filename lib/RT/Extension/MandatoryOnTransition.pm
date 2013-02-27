@@ -421,16 +421,8 @@ sub Config {
 
 =item Enforcement on Create
 
-Configuration syntax is tricky and goes hand in hand with functionality here.
-
-Do we allow separate field lists for on create, or re-use existing status
-transition syntax?  That is, does C<< * -> resolved >> mean "a newly created
-resolved ticket" too?
-
-Components affected:
-
-    index.html / QuickCreate
-    SelfService
+    index.html / QuickCreate    - Not yet implemented.
+    SelfService                 - Not yet implemented.
 
 =item Enforcement on other update pages
 
