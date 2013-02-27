@@ -105,6 +105,10 @@ config option.  This option takes the generic form of:
         },
     );
 
+C<from> and C<to> are expected to be valid status names.  C<from> may also be
+C<*> which will apply to any status and also tickets about to be created with
+status C<to>.
+
 The fallback for queues without specific rules is specified with C<'*'> where
 the queue name would normally be.
 
