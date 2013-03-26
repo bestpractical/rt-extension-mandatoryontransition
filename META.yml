@@ -21,4 +21,4 @@ no_index:
     - xt
 resources:
   license: http://opensource.org/licenses/gpl-license.php
-version: 0.03
+version: 0.04
