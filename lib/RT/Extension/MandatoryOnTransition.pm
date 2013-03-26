@@ -70,6 +70,10 @@ have a "Quick Resolve" button that skips the required fields, adjust your
 lifecycle config to provide an update type (i.e make it a non-quick action).
 Quick actions may be supported in a future release.
 
+=head2 Not all pages where you can change status are supported
+
+The ticket Basics page, for example.  See L</TODO> for others.
+
 =head1 INSTALLATION
 
 =over
