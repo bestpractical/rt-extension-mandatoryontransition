@@ -356,6 +356,8 @@ sub CheckMandatoryFields {
                                      $label, $ARGSRef->{Status});
     }
 
+    return \@errors unless @$cfs;
+
     if ( not $CFs ){
         $RT::Logger->error("Custom Fields object required to process mandatory custom fields");
         return \@errors;
