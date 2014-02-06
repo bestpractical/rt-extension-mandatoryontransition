@@ -1,0 +1,14 @@
+0.04 2013-03-26
+
+ - Link to TODO from CAVEATS
+ - Generate a README for github
+
+0.03 2013-02-27
+
+ - Allows mandatory checking during ticket creation
+ - Mandatory-ness now also applies to the mobile UI
+ - Move tests to being author-only tests
+
+0.01 2012-07-23
+
+ - Initial release
