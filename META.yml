@@ -19,6 +19,8 @@ no_index:
     - html
     - inc
     - xt
+  package:
+    - RT::Extension::MandatoryOnTransition::Test
 resources:
   license: http://opensource.org/licenses/gpl-license.php
 version: 0.05
