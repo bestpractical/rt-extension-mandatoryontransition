@@ -1,3 +1,7 @@
+0.06 2014-02-06
+
+ - Packaging updates (don't index ::Test)
+
 0.05 2014-02-06
 
  - Fix a bug, where if no Cfs were listed, then all were treated as

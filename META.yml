@@ -23,4 +23,4 @@ no_index:
     - RT::Extension::MandatoryOnTransition::Test
 resources:
   license: http://opensource.org/licenses/gpl-license.php
-version: 0.05
+version: 0.06
