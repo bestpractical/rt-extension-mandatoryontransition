@@ -363,7 +363,8 @@ sub CheckMandatoryFields {
         return \@errors;
     }
 
-    $CFs->Limit( FIELD => 'Name', VALUE => $_, SUBCLAUSE => 'names', ENTRYAGGREGRATOR => 'OR' )
+    $CFs->Limit( FIELD => 'Name', VALUE => $_, SUBCLAUSE => 'names',
+        ENTRYAGGREGRATOR => 'OR', CASESENSITIVE => 0 )
       for @$cfs;
 
     # For constructing NamePrefix for both update and create
