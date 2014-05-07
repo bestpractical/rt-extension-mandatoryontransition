@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use RT::Extension::MandatoryOnTransition::Test tests => 37;
+use RT::Extension::MandatoryOnTransition::Test tests => undef;
 
 use_ok('RT::Extension::MandatoryOnTransition');
 
@@ -51,7 +51,13 @@ diag "Try a resolve without TimeWorked";
                           button => 'SubmitTicket',
                         }, 'Submit resolve with Time Worked and Test Field');
 
-    $m->content_contains("TimeWorked changed from &#40;no value&#41; to &#39;10&#39;");
+    if ( $RT::VERSION =~ /^4\.0\.\d+/ ){
+        $m->content_contains("TimeWorked changed from &#40;no value&#41; to &#39;10&#39;");
+    }
+    else{
+        # 4.2 or later
+        $m->content_contains("Worked 10 minutes");
+    }
     $m->content_contains("Status changed from &#39;open&#39; to &#39;resolved&#39;");
 }
 
@@ -93,3 +99,6 @@ diag "Try a resolve without TimeWorked in mobile interface";
     $m->title_like(qr/^#$ticket_id:/, "Page title starts with ticket number $ticket_id");
     like($m->uri->as_string, qr/show/, "On show page after ticket resolve");
 }
+
+undef $m;
+done_testing;
