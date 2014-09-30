@@ -86,10 +86,7 @@ The ticket Basics page, for example.  See L</TODO> for others.
 
 May need root permissions
 
-=item patch -p1 < 4.0.8-additional-mobile-callbacks-plus-style.diff
 
-Run the above in your /opt/rt4 directory to patch RT if on version 4.0.8
-or older.
 
 =item Enable and configure this extension
 

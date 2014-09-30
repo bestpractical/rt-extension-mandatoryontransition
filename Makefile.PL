@@ -6,7 +6,7 @@ readme_from 'lib/RT/Extension/MandatoryOnTransition.pm';
 no_index package => "RT::Extension::MandatoryOnTransition::Test";
 license  'gplv2';
 
-requires_rt('4.0.0');
+requires_rt('4.0.9');
 
 my ($lp) = ($INC{'RT.pm'} =~ /^(.*)[\\\/]/);
 my $lib_path = join( ' ', "$RT::LocalPath/lib", $lp );
