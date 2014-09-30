@@ -2,7 +2,7 @@ use strict;
 use warnings;
 package RT::Extension::MandatoryOnTransition;
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 
 =head1 NAME
 
@@ -78,19 +78,21 @@ The ticket Basics page, for example.  See L</TODO> for others.
 
 =over
 
-=item perl Makefile.PL
+=item C<perl Makefile.PL>
 
-=item make
+=item C<make>
 
-=item make install
+=item C<make install>
 
 May need root permissions
 
+=item Edit your F</opt/rt4/etc/RT_SiteConfig.pm>
 
+If you are using RT 4.2 or greater, add this line:
 
-=item Enable and configure this extension
+    Plugin('RT::Extension::MandatoryOnTransition');
 
-Add this line to </opt/rt4/etc/RT_SiteConfig.pm>:
+For RT 4.0, add this line:
 
     Set(@Plugins, qw(RT::Extension::MandatoryOnTransition));
 
@@ -440,19 +442,23 @@ sub Config {
 
 =back
 
-=head1 BUGS
-
-All bugs should be reported via
-L<http://rt.cpan.org/Public/Dist/Display.html?Name=RT-Extension-MandatoryOnTransition>
-or L<bug-RT-Extension-MandatoryOnTransition@rt.cpan.org>.
-
 =head1 AUTHOR
 
-Thomas Sibley <trs@bestpractical.com>
+Best Practical Solutions, LLC E<lt>modules@bestpractical.comE<gt>
+
+=head1 BUGS
+
+All bugs should be reported via email to
+
+    L<bug-RT-Extension-MandatoryOnTransition@rt.cpan.org|mailto:bug-RT-Extension-MandatoryOnTransition@rt.cpan.org>
+
+or via the web at
+
+    L<rt.cpan.org|http://rt.cpan.org/Public/Dist/Display.html?Name=RT-Extension-MandatoryOnTransition>.
 
 =head1 LICENSE AND COPYRIGHT
 
-This software is Copyright (c) 2012 by Best Practical Solutions
+This software is Copyright (c) 2012-2014 by Best Pracical Solutions, LLC.
 
 This is free software, licensed under:
 

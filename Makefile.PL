@@ -1,8 +1,7 @@
 use inc::Module::Install;
 
 RTx 'RT-Extension-MandatoryOnTransition';
-all_from 'lib/RT/Extension/MandatoryOnTransition.pm';
-readme_from 'lib/RT/Extension/MandatoryOnTransition.pm';
+
 no_index package => "RT::Extension::MandatoryOnTransition::Test";
 license  'gplv2';
 
