@@ -1,3 +1,6 @@
+0.08 2014-09-30
+ - MANIFEST fixes
+
 0.07 2014-09-30
  - Compatibility with RT 4.2
  - Bump the minimum version to 4.0.9, to no longer require shipping a patch
