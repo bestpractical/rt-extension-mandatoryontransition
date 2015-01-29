@@ -195,6 +195,11 @@ even if they are named exactly as listed in @CORE_SUPPORTED.  A supported
 field which doesn't appear in the mapping is skipped, the implication being
 that it isn't available during update.
 
+If your core field is called different things on Update.html and Modify.html
+you will need to modify the Modify.html/Default callback so the the
+extension knows what field to use.  Look at TimeWorked vs UpdateTimeWorked
+for an example.
+
 =item %CORE_FOR_CREATE
 
 A mapping similar to %CORE_FOR_UPDATE but consulted during ticket creation.

@@ -140,6 +140,11 @@ IMPLEMENTATION DETAILS
         mapping is skipped, the implication being that it isn't available
         during update.
 
+        If your core field is called different things on Update.html and
+        Modify.html you will need to modify the Modify.html/Default callback
+        so the the extension knows what field to use. Look at TimeWorked vs
+        UpdateTimeWorked for an example.
+
     %CORE_FOR_CREATE
         A mapping similar to %CORE_FOR_UPDATE but consulted during ticket
         creation. The same rules and restrictions apply.
