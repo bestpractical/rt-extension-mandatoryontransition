@@ -55,7 +55,10 @@ CAVEATS
     release.
 
   Not all pages where you can change status are supported
-    The ticket Basics page, for example. See "TODO" for others.
+    SelfService, for example. See "TODO" for others.
+
+    On 4.0, Basics and Jumbo are not supported because they do not have the
+    needed code, which is present in 4.2.
 
 INSTALLATION
     perl Makefile.PL
@@ -193,8 +196,6 @@ TODO
 
     Enforcement on other update pages
             SelfService - can't do it without patches to <form> POST + additional callbacks
-            Basics      - need to patch callback for skipping (at least)
-            Jumbo       - need to patch callback for skipping (at least)
 
 AUTHOR
     Best Practical Solutions, LLC <modules@bestpractical.com>

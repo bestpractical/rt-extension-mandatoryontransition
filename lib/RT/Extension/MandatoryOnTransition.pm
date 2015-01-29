@@ -72,7 +72,10 @@ Quick actions may be supported in a future release.
 
 =head2 Not all pages where you can change status are supported
 
-The ticket Basics page, for example.  See L</TODO> for others.
+SelfService, for example.  See L</TODO> for others.
+
+On 4.0, Basics and Jumbo are not supported because they do not have the
+needed code, which is present in 4.2.
 
 =head1 INSTALLATION
 
@@ -437,8 +440,6 @@ sub Config {
 =item Enforcement on other update pages
 
     SelfService - can't do it without patches to <form> POST + additional callbacks
-    Basics      - need to patch callback for skipping (at least)
-    Jumbo       - need to patch callback for skipping (at least)
 
 =back
 
