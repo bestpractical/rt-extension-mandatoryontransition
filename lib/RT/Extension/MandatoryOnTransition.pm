@@ -395,10 +395,19 @@ sub CheckMandatoryFields {
         }
 
         # Do we have a submitted value for update?
-        my $arg   = "Object-RT::Ticket-".$TicketId."-CustomField-".$cf->Id."-Value";
-        my $value = ($ARGSRef->{"${arg}s-Magic"} and exists $ARGSRef->{"${arg}s"})
-          ? $ARGSRef->{$arg . "s"}
-            : $ARGSRef->{$arg};
+        my $value;
+        if ( HTML::Mason::Commands->can('_ParseObjectCustomFieldArgs') ) {
+            # steal code from /Elements/ValidateCustomFields
+            my $CFArgs = HTML::Mason::Commands::_ParseObjectCustomFieldArgs( $ARGSRef )->{'RT::Ticket'}{$TicketId || 0} || {};
+            my $submitted = $CFArgs->{$cf->id};
+            # Pick the first grouping
+            $submitted = $submitted ? $submitted->{(keys %$submitted)[0]} : {};
+            $value = $submitted->{Values} // $submitted->{Value};
+        }
+        else {
+            my $arg   = "Object-RT::Ticket-".$TicketId."-CustomField-".$cf->Id."-Value";
+            $value = ($ARGSRef->{"${arg}s-Magic"} and exists $ARGSRef->{"${arg}s"}) ? $ARGSRef->{$arg . "s"} : $ARGSRef->{$arg};
+        }
 
         next if defined $value and length $value;
 
