@@ -401,7 +401,7 @@ sub CheckMandatoryFields {
             my $CFArgs = HTML::Mason::Commands::_ParseObjectCustomFieldArgs( $ARGSRef )->{'RT::Ticket'}{$TicketId || 0} || {};
             my $submitted = $CFArgs->{$cf->id};
             # Pick the first grouping
-            $submitted = $submitted ? $submitted->{(keys %$submitted)[0]} : {};
+            $submitted = $submitted ? $submitted->{(sort keys %$submitted)[0]} : {};
             $value = $submitted->{Values} // $submitted->{Value};
         }
         else {
