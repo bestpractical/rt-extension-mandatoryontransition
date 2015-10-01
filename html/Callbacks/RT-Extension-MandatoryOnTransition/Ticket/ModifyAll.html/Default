@@ -3,7 +3,7 @@
 # which calls TimeWorked UpdateTimeWorked
 # Luckily - while Jumbo contains a Content box, it's called UpdateContent like Update.html, rather than
 # Content like Create.html.
-$RT::Extension::MandatoryOnTransition::CORE_FOR_UPDATE{TimeWorked} = "TimeWorked";
-$RT::Extension::MandatoryOnTransition::CORE_FOR_UPDATE{TimeTaken} = "TimeWorked";
+local $RT::Extension::MandatoryOnTransition::CORE_FOR_UPDATE{TimeWorked} = "TimeWorked";
+local $RT::Extension::MandatoryOnTransition::CORE_FOR_UPDATE{TimeTaken} = "TimeWorked";
 </%INIT>
 <& /Callbacks/RT-Extension-MandatoryOnTransition/Ticket/Update.html/BeforeUpdate, %ARGS &>
