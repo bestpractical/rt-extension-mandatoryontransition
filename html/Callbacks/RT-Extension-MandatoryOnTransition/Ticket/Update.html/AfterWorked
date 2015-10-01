@@ -3,6 +3,7 @@ $Ticket
 </%args>
 <%init>
 my ($core, $cfs) = RT::Extension::MandatoryOnTransition->RequiredFields(
+    Display => 1,
     Ticket  => $Ticket,
     To      => $ARGS{'Status'} || $ARGS{'DefaultStatus'},
 );

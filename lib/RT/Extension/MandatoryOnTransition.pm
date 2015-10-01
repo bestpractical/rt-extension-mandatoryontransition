@@ -260,19 +260,23 @@ sub RequiredFields {
         $args{Queue} ||= $args{Ticket}->QueueObj->Name;
         $args{From}  ||= $args{Ticket}->Status;
     }
-    my ($from, $to) = @args{qw(From To)};
-    return ([], []) unless $from and $to;
-
     my %config = $self->Config($args{Queue});
     return ([], []) unless %config;
 
-    # No transition.
-    return ([], []) if $from eq $to;
+    my $required;
+    if ( $args{Display} and RT->Config->Get('MandatoryOnTransitionAlwaysShow') ) {
+        $required = [ map { ref $_ ? @$_ : $_ } values %config ];
+    } else {
+        my ($from, $to) = @args{qw(From To)};
+        # No transition
+        return ([], []) unless $from and $to;
+        return ([], []) if $from eq $to;
 
-    my $required = $config{"$from -> $to"}
+        $required = $config{"$from -> $to"}
                 || $config{"* -> $to"}
                 || $config{"$from -> *"}
                 || [];
+    }
 
     my %core_supported = map { $_ => 1 } @CORE_SUPPORTED;
 
