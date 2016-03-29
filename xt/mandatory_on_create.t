@@ -32,7 +32,13 @@ diag "Test mandatory fields on create";
                           fields => { Queue => 'General',},
                         }, 'Click button to create ticket');
 
-    $m->title_is('Create a new ticket');
+    if (RT::Extension::MandatoryOnTransition::Test::RTAtorNewerThan('4.4.0')){
+        $m->title_is('Create a new ticket in General');
+    }
+    else{
+        # RT 4.2 or older
+        $m->title_is('Create a new ticket');
+    }
 
     $m->submit_form_ok( { form_name => 'TicketCreate',
                           fields => { Status => 'resolved' },
@@ -43,14 +49,14 @@ diag "Test mandatory fields on create";
 
     $m->submit_form_ok( { form_name => 'TicketCreate',
                           fields => { Status => 'resolved',
-                                    'Object-RT::Ticket--CustomField-1-Values' => 'foo'},
+                                    "Object-RT::Ticket--CustomField-$id-Values" => 'foo'},
                         }, 'Submit with resolved status');
 
     $m->content_contains('Time Worked is required when changing Status to resolved');
 
     $m->submit_form_ok( { form_name => 'TicketCreate',
                           fields => { Status => 'resolved',
-                                      'Object-RT::Ticket--CustomField-1-Values' => 'foo',
+                                      "Object-RT::Ticket--CustomField-$id-Values" => 'foo',
                                       'TimeWorked' => '10', },
                         }, 'Submit with resolved status');
 
@@ -74,14 +80,14 @@ diag "Test mandatory fields on create for mobile";
 
     $m->submit_form_ok( { form_name => 'TicketCreate',
                           fields => { Status => 'resolved',
-                                    'Object-RT::Ticket--CustomField-1-Values' => 'foo'},
+                                    "Object-RT::Ticket--CustomField-$id-Values" => 'foo'},
                         }, 'Submit with resolved status');
 
     $m->content_contains('Time Worked is required when changing Status to resolved');
 
     $m->submit_form_ok( { form_name => 'TicketCreate',
                           fields => { Status => 'resolved',
-                                      'Object-RT::Ticket--CustomField-1-Values' => 'foo',
+                                      "Object-RT::Ticket--CustomField-$id-Values" => 'foo',
                                       'TimeWorked' => '10', },
                         }, 'Submit with resolved status');
 

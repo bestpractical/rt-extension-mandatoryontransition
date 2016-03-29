@@ -47,7 +47,7 @@ diag "Try a resolve without TimeWorked";
 
     $m->submit_form_ok( { form_name => 'TicketUpdate',
                           fields => { UpdateTimeWorked => 10,
-                                    'Object-RT::Ticket-' . $t->id . '-CustomField-1-Values' => 'foo'},
+                                    'Object-RT::Ticket-' . $t->id . "-CustomField-$id-Values" => 'foo'},
                           button => 'SubmitTicket',
                         }, 'Submit resolve with Time Worked and Test Field');
 
@@ -91,7 +91,7 @@ diag "Try a resolve without TimeWorked in mobile interface";
 
     $m->submit_form_ok( { form_number => 1,
                           fields => { UpdateTimeWorked => 10,
-                                    'Object-RT::Ticket-' . $ticket_id . '-CustomField-1-Values' => 'foo'},
+                                    'Object-RT::Ticket-' . $ticket_id . "-CustomField-$id-Values" => 'foo'},
                           button => 'SubmitTicket',
                         }, 'Submit resolve with Time Worked and Test Field');
 
