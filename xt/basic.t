@@ -26,6 +26,22 @@ ok( $id, $msg );
 $cf->AddValue( Name => 'foo' );
 $cf->AddValue( Name => 'bar' );
 
+my $cf2 = RT::CustomField->new($RT::SystemUser);
+my $id2;
+
+diag "Create optional custom field";
+( $id2, $msg ) = $cf2->Create(
+    Name      => 'XXX Optional Field ZZZ',
+    Type      => 'Select',
+    LookupType => 'RT::Queue-RT::Ticket',
+    MaxValues => '1',
+    Queue     => 'General',
+);
+
+ok( $id2, $msg );
+$cf2->AddValue( Name => 'blue' );
+$cf2->AddValue( Name => 'green' );
+
 diag "Try a resolve without TimeWorked";
 {
     my $t = RT::Test->create_ticket(
@@ -39,6 +55,8 @@ diag "Try a resolve without TimeWorked";
     $m->goto_ticket($t->id);
 
     $m->follow_link_ok( { text => 'Resolve' }, 'Try to resolve ticket');
+    $m->content_contains('Test Field');
+    $m->content_lacks('XXX Optional Field ZZZ');
     $m->submit_form_ok( { form_name => 'TicketUpdate',
                           button => 'SubmitTicket',},
                           'Submit resolve with no Time Worked');
