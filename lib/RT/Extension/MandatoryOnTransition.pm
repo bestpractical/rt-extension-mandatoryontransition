@@ -371,7 +371,7 @@ sub CheckMandatoryFields {
         (my $label = $field) =~ s/(?<=[a-z])(?=[A-Z])/ /g; # /
         push @errors,
           $CurrentUser->loc("[_1] is required when changing Status to [_2]",
-                                     $label, $ARGSRef->{Status});
+                                     $label, $CurrentUser->loc($ARGSRef->{Status}));
     }
 
     return \@errors unless @$cfs;
@@ -428,7 +428,7 @@ sub CheckMandatoryFields {
 
         push @errors,
           $CurrentUser->loc("[_1] is required when changing Status to [_2]",
-                                     $cf->Name, $ARGSRef->{Status});
+                                     $cf->Name, $CurrentUser->loc($ARGSRef->{Status}));
     }
 
     return \@errors;
