@@ -78,45 +78,53 @@ INSTALLATION
         or add RT::Extension::MandatoryOnTransition to your existing
         @Plugins line.
 
-        Then configure which fields should be mandatory on certain status
-        changes (either globally or in a specific queue) using the
-        %MandatoryOnTransition config option. This option takes the generic
-        form of:
-
-            Set( %MandatoryOnTransition,
-                'QueueName' => {
-                    'from -> to' => [ 'BasicField', 'CF.MyField', ],
-                },
-            );
-
-        from and to are expected to be valid status names. from may also be
-        * which will apply to any status and also tickets about to be
-        created with status to.
-
-        The fallback for queues without specific rules is specified with '*'
-        where the queue name would normally be.
-
-        Below is an example which requires 1) time worked and filling in a
-        custom field named Resolution before resolving tickets in the
-        Helpdesk queue and 2) a Category selection before resolving tickets
-        in every other queue.
-
-            Set( %MandatoryOnTransition,
-                Helpdesk => {
-                    '* -> resolved' => ['TimeWorked', 'CF.Resolution'],
-                },
-                '*' => {
-                    '* -> resolved' => 'CF.Category',
-                },
-            );
-
-        The transition syntax is similar to that found in RT's Lifecycles.
-        See perldoc /opt/rt4/etc/RT_Config.pm.
-
     Clear your mason cache
             rm -rf /opt/rt4/var/mason_data/obj
 
     Restart your webserver
+
+CONFIGURATION
+    To define which fields should be mandatory on certain status changes
+    (either globally or in a specific queue) use the %MandatoryOnTransition
+    config option. This option takes the generic form of:
+
+        Set( %MandatoryOnTransition,
+            'QueueName' => {
+                'from -> to' => [ 'BasicField', 'CF.MyField', ],
+            },
+        );
+
+    from and to are expected to be valid status names. from may also be *
+    which will apply to any status and also tickets about to be created with
+    status to.
+
+    The fallback for queues without specific rules is specified with '*'
+    where the queue name would normally be.
+
+    Below is an example which requires 1) time worked and filling in a
+    custom field named Resolution before resolving tickets in the Helpdesk
+    queue and 2) a Category selection before resolving tickets in every
+    other queue.
+
+        Set( %MandatoryOnTransition,
+            Helpdesk => {
+                '* -> resolved' => ['TimeWorked', 'CF.Resolution'],
+            },
+            '*' => {
+                '* -> resolved' => 'CF.Category',
+            },
+        );
+
+    The transition syntax is similar to that found in RT's Lifecycles. See
+    perldoc /opt/rt4/etc/RT_Config.pm.
+
+  $ShowAllCustomFieldsOnMandatoryUpdate
+    By default, this extension shows only the mandatory fields on the update
+    page to make it easy for users to fill them out when completing an
+    action. If you would like to show all custom fields rather than just the
+    mandatory ones, use this configuration option. You can set it like this:
+
+        Set($ShowAllCustomFieldsOnMandatoryUpdate, 1);
 
 IMPLEMENTATION DETAILS
     If you're just using this module on your own RT instance, you should

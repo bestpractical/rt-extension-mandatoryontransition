@@ -2,11 +2,17 @@ use strict;
 use warnings;
 package RT::Extension::MandatoryOnTransition;
 
-our $VERSION = '0.09_01';
+our $VERSION = '0.10';
 
 =head1 NAME
 
 RT-Extension-MandatoryOnTransition - Require core fields and ticket custom fields on status transitions
+
+=head1 RT VERSION
+
+Works with RT 4.0, 4.2, .4.4
+
+See below for some restrictions on RT 4.0.
 
 =head1 DESCRIPTION
 
