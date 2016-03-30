@@ -101,8 +101,18 @@ For RT 4.0, add this line:
 
 or add C<RT::Extension::MandatoryOnTransition> to your existing C<@Plugins> line.
 
-Then configure which fields should be mandatory on certain status changes
-(either globally or in a specific queue) using the C<%MandatoryOnTransition>
+=item Clear your mason cache
+
+    rm -rf /opt/rt4/var/mason_data/obj
+
+=item Restart your webserver
+
+=back
+
+=head1 CONFIGURATION
+
+To define which fields should be mandatory on certain status changes
+(either globally or in a specific queue) use the C<%MandatoryOnTransition>
 config option.  This option takes the generic form of:
 
     Set( %MandatoryOnTransition,
@@ -134,13 +144,14 @@ Category selection before resolving tickets in every other queue.
 The transition syntax is similar to that found in RT's Lifecycles.  See
 C<perldoc /opt/rt4/etc/RT_Config.pm>.
 
-=item Clear your mason cache
+=head2 C<$ShowAllCustomFieldsOnMandatoryUpdate>
 
-    rm -rf /opt/rt4/var/mason_data/obj
+By default, this extension shows only the mandatory fields on the update page
+to make it easy for users to fill them out when completing an action. If you
+would like to show all custom fields rather than just the mandatory ones,
+use this configuration option. You can set it like this:
 
-=item Restart your webserver
-
-=back
+    Set($ShowAllCustomFieldsOnMandatoryUpdate, 1);
 
 =head1 IMPLEMENTATION DETAILS
 

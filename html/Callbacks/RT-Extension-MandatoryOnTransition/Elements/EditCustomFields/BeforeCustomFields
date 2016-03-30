@@ -3,6 +3,7 @@ $CustomFields
 $ARGSRef
 </%args>
 <%init>
+return if RT->Config->Get('ShowAllCustomFieldsOnMandatoryUpdate');
 return unless $ARGSRef->{'Named'} and @{$ARGSRef->{'Named'}};
 
 $CustomFields->Limit( FIELD => 'Name',
