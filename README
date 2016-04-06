@@ -2,6 +2,11 @@ NAME
     RT-Extension-MandatoryOnTransition - Require core fields and ticket
     custom fields on status transitions
 
+RT VERSION
+    Works with RT 4.0, 4.2, 4.4
+
+    See below for some restrictions on RT 4.0.
+
 DESCRIPTION
     This RT extension enforces that certain fields have values before
     tickets are explicitly moved to or from specified statuses. If you list
