@@ -10,7 +10,7 @@ RT-Extension-MandatoryOnTransition - Require core fields and ticket custom field
 
 =head1 RT VERSION
 
-Works with RT 4.0, 4.2, .4.4
+Works with RT 4.0, 4.2, 4.4
 
 See below for some restrictions on RT 4.0.
 
