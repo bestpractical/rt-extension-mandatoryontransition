@@ -50,15 +50,6 @@ CAVEATS
     a CFs Validation to (?#Mandatory). will not magically make it enforced
     by this extension.
 
-  Actions menu
-    This extension does not affect "quick actions" (those without an update
-    type) configured in your lifecycle (and appearing in the ticket Actions
-    menu). If you're requiring fields on resolve, for example, and don't
-    want folks to have a "Quick Resolve" button that skips the required
-    fields, adjust your lifecycle config to provide an update type (i.e make
-    it a non-quick action). Quick actions may be supported in a future
-    release.
-
   Not all pages where you can change status are supported
     SelfService, for example. See "TODO" for others.
 

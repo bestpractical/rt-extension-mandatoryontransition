@@ -67,15 +67,6 @@ rules.  If you've set Validation patterns for your custom fields, those will be
 checked before mandatory-ness is checked.  B<< Setting a CFs Validation to
 C<(?#Mandatory).> will not magically make it enforced by this extension. >>
 
-=head2 Actions menu
-
-This extension does B<not> affect "quick actions" (those without an update
-type) configured in your lifecycle (and appearing in the ticket Actions menu).
-If you're requiring fields on resolve, for example, and don't want folks to
-have a "Quick Resolve" button that skips the required fields, adjust your
-lifecycle config to provide an update type (i.e make it a non-quick action).
-Quick actions may be supported in a future release.
-
 =head2 Not all pages where you can change status are supported
 
 SelfService, for example.  See L</TODO> for others.
