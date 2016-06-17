@@ -134,6 +134,8 @@ status C<to>.
 The fallback for queues without specific rules is specified with C<'*'> where
 the queue name would normally be.
 
+=head2 Requiring Any Value
+
 Below is an example which requires 1) time worked and filling in a custom field
 named Resolution before resolving tickets in the Helpdesk queue and 2) a
 Category selection before resolving tickets in every other queue.
@@ -149,6 +151,29 @@ Category selection before resolving tickets in every other queue.
 
 The transition syntax is similar to that found in RT's Lifecycles.  See
 C<perldoc /opt/rt4/etc/RT_Config.pm>.
+
+=head2 Requiring or Restricting Specific Values
+
+Sometimes you want to restrict a transition if a field has a specific
+value (maybe a ticket can't be resolved if System Status = down) or
+require a specific value to to allow a transition (ticket can't be
+resolved unless System Status = normal). To enforce specific values, you
+can add the following:
+
+    Set( %MandatoryOnTransition,
+        Helpdesk => {
+            '* -> resolved' => ['TimeWorked', 'CF.Some Field1', 'CF.Some Field2'],
+            'CF.Test Field2' => { transition => '* -> resolved', must_be => ['normal', 'restored'] },
+            'CF.Test Field3' => { transition => '* -> resolved', must_not_be => ['reduced', 'down']}
+        },
+    );
+
+This will then enforce both that the value is set and that it either has
+one of the required values on the configured transition or does
+not have one of the restricted values.
+
+Note that you need to specify the transition the rule applies to
+since a given queue configuration could have multiple transition rules.
 
 =head2 C<$ShowAllCustomFieldsOnMandatoryUpdate>
 
@@ -272,7 +297,25 @@ sub RequiredFields {
     my @cfs  =  map { /^CF\.(.+)$/i; $1; }
                grep { /^CF\./i } @$required;
 
-    return (\@core, \@cfs);
+    # Pull out an must be or must not be rules
+    my %cf_must_values = ();
+    foreach my $cf (@cfs){
+        if ( $config{"CF.$cf"} ){
+            my $transition = $config{"CF.$cf"}->{'transition'};
+            unless ( $transition ){
+                RT->Logger->error("No transition defined in must be or must not be rules for $cf");
+                next;
+            }
+
+            if ( $transition eq "$from -> $to"
+                 || $transition eq "* -> $to"
+                 || $transition eq "$from -> *" ) {
+
+                $cf_must_values{$cf} = $config{"CF.$cf"};
+            }
+        }
+    }
+    return (\@core, \@cfs, \%cf_must_values);
 }
 
 =head3 CheckMandatoryFields
@@ -325,7 +368,7 @@ sub CheckMandatoryFields {
         return \@errors;
     }
 
-    my ($core, $cfs) = $self->RequiredFields(
+    my ($core, $cfs, $must_values) = $self->RequiredFields(
         Ticket  => $args{'Ticket'},
         Queue   => $args{'Queue'} ? $args{'Queue'}->Name : undef,
         From    => $args{'From'},
@@ -401,6 +444,39 @@ sub CheckMandatoryFields {
             $value = ($ARGSRef->{"${arg}s-Magic"} and exists $ARGSRef->{"${arg}s"}) ? $ARGSRef->{$arg . "s"} : $ARGSRef->{$arg};
         }
 
+        # Check for specific values
+        if ( exists $must_values->{$cf->Name} ){
+            my $cf_value = $value;
+            # Fetch the current value if we didn't receive a new one
+            $cf_value = $args{'Ticket'}->FirstCustomFieldValue($cf->Name)
+                unless defined $cf_value;
+
+            if ( exists $must_values->{$cf->Name}{'must_be'} ){
+                # OK if it's defined and is one of the specified values
+                next if defined $cf_value and grep { $cf_value eq $_ } @{$must_values->{$cf->Name}{'must_be'}};
+                my $valid_values = join ", ", @{$must_values->{$cf->Name}{'must_be'}};
+                my $one_of = '';
+                $one_of = " one of:" if @{$must_values->{$cf->Name}{'must_be'}} > 1;
+                push @errors,
+                  $CurrentUser->loc("[_1] must be$one_of [_3] when changing Status to [_2]",
+                                    $cf->Name, $CurrentUser->loc($ARGSRef->{Status}), $valid_values);
+                next;
+            }
+
+            if ( exists $must_values->{$cf->Name}{'must_not_be'} ){
+                # OK if it's defined and _not_ in the list
+                next if defined $cf_value and !grep { $cf_value eq $_ } @{$must_values->{$cf->Name}{'must_not_be'}};
+                my $valid_values = join ", ", @{$must_values->{$cf->Name}{'must_not_be'}};
+                my $one_of = '';
+                $one_of = " one of:" if @{$must_values->{$cf->Name}{'must_not_be'}} > 1;
+                push @errors,
+                  $CurrentUser->loc("[_1] must not be$one_of [_3] when changing Status to [_2]",
+                                    $cf->Name, $CurrentUser->loc($ARGSRef->{Status}), $valid_values);
+                next;
+            }
+        }
+
+        # Check for any value
         next if defined $value and length $value;
 
         # Is there a current value?  (Particularly important for Date/Datetime CFs

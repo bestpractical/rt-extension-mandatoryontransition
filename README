@@ -106,6 +106,7 @@ CONFIGURATION
     The fallback for queues without specific rules is specified with '*'
     where the queue name would normally be.
 
+  Requiring Any Value
     Below is an example which requires 1) time worked and filling in a
     custom field named Resolution before resolving tickets in the Helpdesk
     queue and 2) a Category selection before resolving tickets in every
@@ -122,6 +123,28 @@ CONFIGURATION
 
     The transition syntax is similar to that found in RT's Lifecycles. See
     perldoc /opt/rt4/etc/RT_Config.pm.
+
+  Requiring or Restricting Specific Values
+    Sometimes you want to restrict a transition if a field has a specific
+    value (maybe a ticket can't be resolved if System Status = down) or
+    require a specific value to to allow a transition (ticket can't be
+    resolved unless System Status = normal). To enforce specific values, you
+    can add the following:
+
+        Set( %MandatoryOnTransition,
+            Helpdesk => {
+                '* -> resolved' => ['TimeWorked', 'CF.Some Field1', 'CF.Some Field2'],
+                'CF.Test Field2' => { transition => '* -> resolved', must_be => ['normal', 'restored'] },
+                'CF.Test Field3' => { transition => '* -> resolved', must_not_be => ['reduced', 'down']}
+            },
+        );
+
+    This will then enforce both that the value is set and that it either has
+    one of the required values on the configured transition or does not have
+    one of the restricted values.
+
+    Note that you need to specify the transition the rule applies to since a
+    given queue configuration could have multiple transition rules.
 
   $ShowAllCustomFieldsOnMandatoryUpdate
     By default, this extension shows only the mandatory fields on the update
