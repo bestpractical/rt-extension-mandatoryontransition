@@ -165,31 +165,6 @@ If you're just using this module on your own RT instance, you should stop
 reading now.  You don't need to know about the implementation details unless
 you're writing a patch against this extension.
 
-=cut
-
-$RT::Config::META{'MandatoryOnTransition'} = {
-    Type            => 'HASH',
-    PostLoadCheck   => sub {
-        # Normalize field list to always be arrayref
-        my $self = shift;
-        my %config = $self->Get('MandatoryOnTransition');
-        for my $transitions (values %config) {
-            for (keys %$transitions) {
-                next if ref $transitions->{$_} eq 'ARRAY';
-
-                if (ref $transitions->{$_}) {
-                    RT->Logger->error("%MandatoryOnTransition definition '$_' must be a single field name or an array ref of field names.  Ignoring.");
-                    delete $transitions->{$_};
-                    next;
-                }
-
-                $transitions->{$_} = [ $transitions->{$_} ];
-            }
-        }
-        $self->Set(MandatoryOnTransition => %config);
-    },
-};
-
 =head2 Package variables
 
 =over 4
