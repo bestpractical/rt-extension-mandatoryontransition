@@ -291,6 +291,30 @@ sub RequiredFields {
     return (\@core, \@cfs);
 }
 
+=head3 GetSubmittedValue
+
+Return submitted value for given $TicketId ticket Id, $CFId custom field ID and $ARGSRef
+You shouldn't need to use this directly.
+
+=cut
+
+sub GetSubmittedValue {
+    my ($TicketId, $CFId, $ARGSRef) = @_;
+    my $value;
+    if ( HTML::Mason::Commands->can('_ParseObjectCustomFieldArgs') ) {
+        # steal code from /Elements/ValidateCustomFields
+        my $CFArgs = HTML::Mason::Commands::_ParseObjectCustomFieldArgs( $ARGSRef )->{'RT::Ticket'}{$TicketId || 0} || {};
+        my $submitted = $CFArgs->{$CFId};
+        # Pick the first grouping
+        $submitted = $submitted ? $submitted->{(sort keys %$submitted)[0]} : {};
+        $value = $submitted->{Values} // $submitted->{Value};
+    } else {
+        my $arg = "Object-RT::Ticket-".$TicketId."-CustomField-".$CFId."-Value";
+        $value = ($ARGSRef->{"${arg}s-Magic"} and exists $ARGSRef->{"${arg}s"}) ? $ARGSRef->{$arg . "s"} : $ARGSRef->{$arg};
+    }
+    return $value;
+}
+
 =head3 CheckMandatoryFields
 
 Pulls core and custom mandatory fields from the configuration and
@@ -403,25 +427,25 @@ sub CheckMandatoryFields {
         }
 
         # Do we have a submitted value for update?
-        my $value;
-        if ( HTML::Mason::Commands->can('_ParseObjectCustomFieldArgs') ) {
-            # steal code from /Elements/ValidateCustomFields
-            my $CFArgs = HTML::Mason::Commands::_ParseObjectCustomFieldArgs( $ARGSRef )->{'RT::Ticket'}{$TicketId || 0} || {};
-            my $submitted = $CFArgs->{$cf->id};
-            # Pick the first grouping
-            $submitted = $submitted ? $submitted->{(sort keys %$submitted)[0]} : {};
-            $value = $submitted->{Values} // $submitted->{Value};
-        }
-        else {
-            my $arg   = "Object-RT::Ticket-".$TicketId."-CustomField-".$cf->Id."-Value";
-            $value = ($ARGSRef->{"${arg}s-Magic"} and exists $ARGSRef->{"${arg}s"}) ? $ARGSRef->{$arg . "s"} : $ARGSRef->{$arg};
-        }
-
+        my $value = GetSubmittedValue($TicketId, $cf->Id, $ARGSRef);
         next if defined $value and length $value;
 
         # Is there a current value?  (Particularly important for Date/Datetime CFs
         # since they don't submit a value on update.)
         next if $args{'Ticket'} && $cf->ValuesForObject($args{'Ticket'})->Count;
+
+        # Check if this CF values are based on an other CF values, and if there are selectable values
+        my $BasedOnCFId = $cf->BasedOn;
+        # Is this CF values based on an other CF value ?
+        if ($BasedOnCFId) {
+            # Get selected value for the "based on" CF
+            my $BasedOnSelectedValue = GetSubmittedValue($TicketId, $BasedOnCFId, $ARGSRef);
+            # Get number of possible values for current CF, filtered by the selected value for "based on" CF
+            my $AvailableValues = $cf->Values;
+            $AvailableValues->Limit(FIELD => "Category", VALUE => $BasedOnSelectedValue);
+            # No error if there is no possible values
+            next if $AvailableValues->Count == 0;
+        }
 
         push @errors,
           $CurrentUser->loc("[_1] is required when changing Status to [_2]",
