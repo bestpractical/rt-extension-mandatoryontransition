@@ -527,6 +527,16 @@ sub Config {
 
     SelfService - can't do it without patches to <form> POST + additional callbacks
 
+=item Full Validation of Configuration
+
+    Check that all CFs are actually CFs applied to the indicated queues (or global). Also
+    validate additional CF's with "must" configuration are defined in a transition.
+
+=item Allow empty values in "must" configuration
+
+    When defining a list of "must be" or "must not be" values, there may be use cases where
+    an empty value could be valid. Provide a way to specify and allow this.
+
 =back
 
 =head1 AUTHOR
