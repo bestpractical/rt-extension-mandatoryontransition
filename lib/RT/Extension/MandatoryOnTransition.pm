@@ -297,7 +297,7 @@ sub RequiredFields {
     my @cfs  =  map { /^CF\.(.+)$/i; $1; }
                grep { /^CF\./i } @$required;
 
-    # Pull out an must be or must not be rules
+    # Pull out any must_be or must_not_be rules
     my %cf_must_values = ();
     foreach my $cf (@cfs){
         if ( $config{"CF.$cf"} ){
@@ -447,9 +447,11 @@ sub CheckMandatoryFields {
         # Check for specific values
         if ( exists $must_values->{$cf->Name} ){
             my $cf_value = $value;
-            # Fetch the current value if we didn't receive a new one
-            $cf_value = $args{'Ticket'}->FirstCustomFieldValue($cf->Name)
-                unless defined $cf_value;
+
+            if ( not defined $cf_value and $args{'Ticket'} ){
+                # Fetch the current value if we didn't receive a new one
+                $cf_value = $args{'Ticket'}->FirstCustomFieldValue($cf->Name);
+            }
 
             if ( exists $must_values->{$cf->Name}{'must_be'} ){
                 my @must_be = @{$must_values->{$cf->Name}{'must_be'}};
