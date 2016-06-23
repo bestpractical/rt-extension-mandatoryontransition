@@ -303,7 +303,7 @@ sub RequiredFields {
         if ( $config{"CF.$cf"} ){
             my $transition = $config{"CF.$cf"}->{'transition'};
             unless ( $transition ){
-                RT->Logger->error("No transition defined in must be or must not be rules for $cf");
+                RT->Logger->error("No transition defined in must_be or must_not_be rules for $cf");
                 next;
             }
 
@@ -452,11 +452,13 @@ sub CheckMandatoryFields {
                 unless defined $cf_value;
 
             if ( exists $must_values->{$cf->Name}{'must_be'} ){
+                my @must_be = @{$must_values->{$cf->Name}{'must_be'}};
+
                 # OK if it's defined and is one of the specified values
-                next if defined $cf_value and grep { $cf_value eq $_ } @{$must_values->{$cf->Name}{'must_be'}};
-                my $valid_values = join ", ", @{$must_values->{$cf->Name}{'must_be'}};
+                next if defined $cf_value and grep { $cf_value eq $_ } @must_be;
+                my $valid_values = join ", ", @must_be;
                 my $one_of = '';
-                $one_of = " one of:" if @{$must_values->{$cf->Name}{'must_be'}} > 1;
+                $one_of = " one of:" if @must_be > 1;
                 push @errors,
                   $CurrentUser->loc("[_1] must be$one_of [_3] when changing Status to [_2]",
                                     $cf->Name, $CurrentUser->loc($ARGSRef->{Status}), $valid_values);
@@ -464,11 +466,13 @@ sub CheckMandatoryFields {
             }
 
             if ( exists $must_values->{$cf->Name}{'must_not_be'} ){
+                my @must_not_be = @{$must_values->{$cf->Name}{'must_not_be'}};
+
                 # OK if it's defined and _not_ in the list
-                next if defined $cf_value and !grep { $cf_value eq $_ } @{$must_values->{$cf->Name}{'must_not_be'}};
-                my $valid_values = join ", ", @{$must_values->{$cf->Name}{'must_not_be'}};
+                next if defined $cf_value and !grep { $cf_value eq $_ } @must_not_be;
+                my $valid_values = join ", ", @must_not_be;
                 my $one_of = '';
-                $one_of = " one of:" if @{$must_values->{$cf->Name}{'must_not_be'}} > 1;
+                $one_of = " one of:" if @must_not_be > 1;
                 push @errors,
                   $CurrentUser->loc("[_1] must not be$one_of [_3] when changing Status to [_2]",
                                     $cf->Name, $CurrentUser->loc($ARGSRef->{Status}), $valid_values);
