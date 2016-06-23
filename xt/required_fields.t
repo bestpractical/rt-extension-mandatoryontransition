@@ -23,11 +23,11 @@ diag "Test RequiredFields without a ticket";
     is( $core->[0], 'TimeWorked', 'Got TimeWorked for required core');
     is( $cf->[0], 'Test Field', 'Got Test Field for required custom field');
 
-    is( (ref $must_values->{'Test Field2'}), 'HASH', 'Got a hash for Test Field2 must values');
-    is( (ref $must_values->{'Test Field2'}{'must_be'}), 'ARRAY', 'Got an array for must be values');
-    is( (ref $must_values->{'Test Field2'}{'must_not_be'}), 'ARRAY', 'Got an array for must not be values');
-    is( $must_values->{'Test Field2'}{'must_be'}->[0], 'normal', "First must be value is 'normal'");
-    is( $must_values->{'Test Field2'}{'must_not_be'}->[0], 'down', "First must not be value is 'down'");
+    is( (ref $must_values->{'Test Field3'}), 'HASH', 'Got a hash for Test Field3 must values');
+    is( (ref $must_values->{'Test Field3'}{'must_be'}), 'ARRAY', 'Got an array for must be values');
+    is( (ref $must_values->{'Test Field4'}{'must_not_be'}), 'ARRAY', 'Got an array for must not be values');
+    is( $must_values->{'Test Field3'}{'must_be'}->[0], 'normal', "First must be value is 'normal'");
+    is( $must_values->{'Test Field4'}{'must_not_be'}->[0], 'down', "First must not be value is 'down'");
 }
 
 diag "Test RequiredFields with a ticket";
@@ -48,11 +48,11 @@ diag "Test RequiredFields with a ticket";
     is( $core->[0], 'TimeWorked', 'Got TimeWorked for required core');
     is( $cf->[0], 'Test Field', 'Got Test Field for required custom field');
 
-    is( (ref $must_values->{'Test Field2'}), 'HASH', 'Got a hash for Test Field2 must values');
-    is( (ref $must_values->{'Test Field2'}{'must_be'}), 'ARRAY', 'Got an array for must be values');
-    is( (ref $must_values->{'Test Field2'}{'must_not_be'}), 'ARRAY', 'Got an array for must not be values');
-    is( $must_values->{'Test Field2'}{'must_be'}->[0], 'normal', "First must be value is 'normal'");
-    is( $must_values->{'Test Field2'}{'must_not_be'}->[0], 'down', "First must not be value is 'down'");
+    is( (ref $must_values->{'Test Field3'}), 'HASH', 'Got a hash for Test Field3 must values');
+    is( (ref $must_values->{'Test Field3'}{'must_be'}), 'ARRAY', 'Got an array for must be values');
+    is( (ref $must_values->{'Test Field4'}{'must_not_be'}), 'ARRAY', 'Got an array for must not be values');
+    is( $must_values->{'Test Field3'}{'must_be'}->[0], 'normal', "First must be value is 'normal'");
+    is( $must_values->{'Test Field4'}{'must_not_be'}->[0], 'down', "First must not be value is 'down'");
 }
 
 done_testing;
