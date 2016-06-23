@@ -459,11 +459,16 @@ sub CheckMandatoryFields {
                 # OK if it's defined and is one of the specified values
                 next if defined $cf_value and grep { $cf_value eq $_ } @must_be;
                 my $valid_values = join ", ", @must_be;
-                my $one_of = '';
-                $one_of = " one of:" if @must_be > 1;
-                push @errors,
-                  $CurrentUser->loc("[_1] must be$one_of [_3] when changing Status to [_2]",
-                                    $cf->Name, $CurrentUser->loc($ARGSRef->{Status}), $valid_values);
+                if ( @must_be > 1 ){
+                    push @errors,
+                        $CurrentUser->loc("[_1] must be one of: [_3] when changing Status to [_2]",
+                        $cf->Name, $CurrentUser->loc($ARGSRef->{Status}), $valid_values);
+                }
+                else{
+                    push @errors,
+                        $CurrentUser->loc("[_1] must be [_3] when changing Status to [_2]",
+                        $cf->Name, $CurrentUser->loc($ARGSRef->{Status}), $valid_values);
+                }
                 next;
             }
 
@@ -473,11 +478,16 @@ sub CheckMandatoryFields {
                 # OK if it's defined and _not_ in the list
                 next if defined $cf_value and !grep { $cf_value eq $_ } @must_not_be;
                 my $valid_values = join ", ", @must_not_be;
-                my $one_of = '';
-                $one_of = " one of:" if @must_not_be > 1;
-                push @errors,
-                  $CurrentUser->loc("[_1] must not be$one_of [_3] when changing Status to [_2]",
-                                    $cf->Name, $CurrentUser->loc($ARGSRef->{Status}), $valid_values);
+                if ( @must_not_be > 1 ){
+                    push @errors,
+                        $CurrentUser->loc("[_1] must not be one of: [_3] when changing Status to [_2]",
+                        $cf->Name, $CurrentUser->loc($ARGSRef->{Status}), $valid_values);
+                }
+                else{
+                    push @errors,
+                        $CurrentUser->loc("[_1] must not be [_3] when changing Status to [_2]",
+                        $cf->Name, $CurrentUser->loc($ARGSRef->{Status}), $valid_values);
+                }
                 next;
             }
         }
