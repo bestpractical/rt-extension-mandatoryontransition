@@ -125,6 +125,8 @@ status C<to>.
 The fallback for queues without specific rules is specified with C<'*'> where
 the queue name would normally be.
 
+=head2 Requiring Any Value
+
 Below is an example which requires 1) time worked and filling in a custom field
 named Resolution before resolving tickets in the Helpdesk queue and 2) a
 Category selection before resolving tickets in every other queue.
@@ -141,6 +143,29 @@ Category selection before resolving tickets in every other queue.
 The transition syntax is similar to that found in RT's Lifecycles.  See
 C<perldoc /opt/rt4/etc/RT_Config.pm>.
 
+=head2 Requiring or Restricting Specific Values
+
+Sometimes you want to restrict a transition if a field has a specific
+value (maybe a ticket can't be resolved if System Status = down) or
+require a specific value to to allow a transition (ticket can't be
+resolved unless a problem was fixed). To enforce specific values, you
+can add the following:
+
+    Set( %MandatoryOnTransition,
+        Helpdesk => {
+            '* -> resolved' => ['TimeWorked', 'CF.Resolution', 'CF.System Status'],
+            'CF.Resolution' => { transition => '* -> resolved', must_be => ['fixed', 'not an issue'] },
+            'CF.System Status' => { transition => '* -> resolved', must_not_be => ['reduced', 'down']}
+        },
+    );
+
+This will then enforce both that the value is set and that it either has
+one of the required values on the configured transition or does
+not have one of the restricted values.
+
+Note that you need to specify the transition the rule applies to
+since a given queue configuration could have multiple transition rules.
+
 =head2 C<$ShowAllCustomFieldsOnMandatoryUpdate>
 
 By default, this extension shows only the mandatory fields on the update page
@@ -155,31 +180,6 @@ use this configuration option. You can set it like this:
 If you're just using this module on your own RT instance, you should stop
 reading now.  You don't need to know about the implementation details unless
 you're writing a patch against this extension.
-
-=cut
-
-$RT::Config::META{'MandatoryOnTransition'} = {
-    Type            => 'HASH',
-    PostLoadCheck   => sub {
-        # Normalize field list to always be arrayref
-        my $self = shift;
-        my %config = $self->Get('MandatoryOnTransition');
-        for my $transitions (values %config) {
-            for (keys %$transitions) {
-                next if ref $transitions->{$_} eq 'ARRAY';
-
-                if (ref $transitions->{$_}) {
-                    RT->Logger->error("%MandatoryOnTransition definition '$_' must be a single field name or an array ref of field names.  Ignoring.");
-                    delete $transitions->{$_};
-                    next;
-                }
-
-                $transitions->{$_} = [ $transitions->{$_} ];
-            }
-        }
-        $self->Set(MandatoryOnTransition => %config);
-    },
-};
 
 =head2 Package variables
 
@@ -288,7 +288,25 @@ sub RequiredFields {
     my @cfs  =  map { /^CF\.(.+)$/i; $1; }
                grep { /^CF\./i } @$required;
 
-    return (\@core, \@cfs);
+    # Pull out any must_be or must_not_be rules
+    my %cf_must_values = ();
+    foreach my $cf (@cfs){
+        if ( $config{"CF.$cf"} ){
+            my $transition = $config{"CF.$cf"}->{'transition'};
+            unless ( $transition ){
+                RT->Logger->error("No transition defined in must_be or must_not_be rules for $cf");
+                next;
+            }
+
+            if ( $transition eq "$from -> $to"
+                 || $transition eq "* -> $to"
+                 || $transition eq "$from -> *" ) {
+
+                $cf_must_values{$cf} = $config{"CF.$cf"};
+            }
+        }
+    }
+    return (\@core, \@cfs, \%cf_must_values);
 }
 
 =head3 CheckMandatoryFields
@@ -341,7 +359,7 @@ sub CheckMandatoryFields {
         return \@errors;
     }
 
-    my ($core, $cfs) = $self->RequiredFields(
+    my ($core, $cfs, $must_values) = $self->RequiredFields(
         Ticket  => $args{'Ticket'},
         Queue   => $args{'Queue'} ? $args{'Queue'}->Name : undef,
         From    => $args{'From'},
@@ -417,6 +435,55 @@ sub CheckMandatoryFields {
             $value = ($ARGSRef->{"${arg}s-Magic"} and exists $ARGSRef->{"${arg}s"}) ? $ARGSRef->{$arg . "s"} : $ARGSRef->{$arg};
         }
 
+        # Check for specific values
+        if ( exists $must_values->{$cf->Name} ){
+            my $cf_value = $value;
+
+            if ( not defined $cf_value and $args{'Ticket'} ){
+                # Fetch the current value if we didn't receive a new one
+                $cf_value = $args{'Ticket'}->FirstCustomFieldValue($cf->Name);
+            }
+
+            if ( exists $must_values->{$cf->Name}{'must_be'} ){
+                my @must_be = @{$must_values->{$cf->Name}{'must_be'}};
+
+                # OK if it's defined and is one of the specified values
+                next if defined $cf_value and grep { $cf_value eq $_ } @must_be;
+                my $valid_values = join ", ", @must_be;
+                if ( @must_be > 1 ){
+                    push @errors,
+                        $CurrentUser->loc("[_1] must be one of: [_3] when changing Status to [_2]",
+                        $cf->Name, $CurrentUser->loc($ARGSRef->{Status}), $valid_values);
+                }
+                else{
+                    push @errors,
+                        $CurrentUser->loc("[_1] must be [_3] when changing Status to [_2]",
+                        $cf->Name, $CurrentUser->loc($ARGSRef->{Status}), $valid_values);
+                }
+                next;
+            }
+
+            if ( exists $must_values->{$cf->Name}{'must_not_be'} ){
+                my @must_not_be = @{$must_values->{$cf->Name}{'must_not_be'}};
+
+                # OK if it's defined and _not_ in the list
+                next if defined $cf_value and !grep { $cf_value eq $_ } @must_not_be;
+                my $valid_values = join ", ", @must_not_be;
+                if ( @must_not_be > 1 ){
+                    push @errors,
+                        $CurrentUser->loc("[_1] must not be one of: [_3] when changing Status to [_2]",
+                        $cf->Name, $CurrentUser->loc($ARGSRef->{Status}), $valid_values);
+                }
+                else{
+                    push @errors,
+                        $CurrentUser->loc("[_1] must not be [_3] when changing Status to [_2]",
+                        $cf->Name, $CurrentUser->loc($ARGSRef->{Status}), $valid_values);
+                }
+                next;
+            }
+        }
+
+        # Check for any value
         next if defined $value and length $value;
 
         # Is there a current value?  (Particularly important for Date/Datetime CFs
@@ -462,6 +529,16 @@ sub Config {
 =item Enforcement on other update pages
 
     SelfService - can't do it without patches to <form> POST + additional callbacks
+
+=item Full Validation of Configuration
+
+    Check that all CFs are actually CFs applied to the indicated queues (or global). Also
+    validate additional CF's with "must" configuration are defined in a transition.
+
+=item Allow empty values in "must" configuration
+
+    When defining a list of "must be" or "must not be" values, there may be use cases where
+    an empty value could be valid. Provide a way to specify and allow this.
 
 =back
 
