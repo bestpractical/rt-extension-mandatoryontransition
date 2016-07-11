@@ -1,3 +1,6 @@
+0.11 2016-06-30
+ - Allow rules to require or restrict specific values on transition
+
 0.10 2016-04-02
  - Updates to run on RT 4.4 (tests)
  - Fix bug where non-mandatory fields were displayed on update
