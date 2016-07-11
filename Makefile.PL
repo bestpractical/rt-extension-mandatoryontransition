@@ -5,6 +5,8 @@ RTx 'RT-Extension-MandatoryOnTransition';
 no_index package => "RT::Extension::MandatoryOnTransition::Test";
 license  'gplv2';
 
+repository('https://github.com/bestpractical/rt-extension-mandatoryontransition');
+
 requires_rt('4.0.9');
 
 my ($lp) = ($INC{'RT.pm'} =~ /^(.*)[\\\/]/);
