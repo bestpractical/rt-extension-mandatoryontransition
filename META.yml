@@ -28,5 +28,5 @@ resources:
   license: http://opensource.org/licenses/gpl-license.php
   repository: https://github.com/bestpractical/rt-extension-mandatoryontransition
 version: '0.12'
-x_module_install_rtx_version: '0.37'
+x_module_install_rtx_version: '0.38'
 x_requires_rt: 4.0.9
