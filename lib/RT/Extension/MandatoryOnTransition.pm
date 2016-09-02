@@ -309,6 +309,65 @@ sub RequiredFields {
     return (\@core, \@cfs, \%cf_must_values);
 }
 
+sub QueueRequiredFields {
+    my $self  = shift;
+    my %args  = (
+        Ticket  => undef,
+        To      => undef,
+        @_,
+    );
+
+    my ($from, $to);
+    $from = $args{Ticket}->QueueObj->Name;
+
+    my $to_obj = RT::Queue->new( $args{Ticket}->CurrentUser );
+    $to_obj->Load( $args{To} );
+    return ([], []) unless $to_obj->id;
+    $to = $to_obj->Name;
+
+    return ([], []) unless $from and $to;
+
+    my %config = $self->QueueConfig;
+    return ([], []) unless %config;
+
+    # No transition.
+    return ([], []) if $from eq $to;
+
+    my $required = $config{"$from -> $to"}
+                || $config{"* -> $to"}
+                || $config{"$from -> *"}
+                || [];
+
+    my %core_supported = map { $_ => 1 } @CORE_SUPPORTED;
+
+    my @core = grep { !/^CF\./i && $core_supported{$_} } @$required;
+    my @cfs  =  map { /^CF\.(.+)$/i; $1; }
+               grep { /^CF\./i } @$required;
+
+    # Pull out any must_be or must_not_be rules
+    my %cf_must_values = ();
+    foreach my $cf (@cfs){
+        if ( $config{"CF.$cf"} ){
+            my $transition = $config{"CF.$cf"}->{'transition'};
+            unless ( $transition ){
+                RT->Logger->error("No transition defined in must_be or must_not_be rules for $cf");
+                next;
+            }
+
+            if ( $transition eq "$from -> $to"
+                 || $transition eq "* -> $to"
+                 || $transition eq "$from -> *" ) {
+
+                $cf_must_values{$cf} = $config{"CF.$cf"};
+            }
+        }
+    }
+
+    return (\@core, \@cfs, \%cf_must_values);
+}
+
+
+
 =head3 CheckMandatoryFields
 
 Pulls core and custom mandatory fields from the configuration and
@@ -341,7 +400,86 @@ sub CheckMandatoryFields {
         To      => undef,
         @_,
     );
-    my $ARGSRef = $args{'ARGSRef'};
+
+    my $ARGSRef = $args{ARGSRef};
+
+    my @errors;
+    my $CurrentUser;
+
+    unless ( $args{Ticket} || $args{Queue} ) {
+        $RT::Logger->error("CheckMandatoryFields requires a Ticket object or a Queue object");
+        return \@errors;
+    }
+
+    $CurrentUser = $args{Ticket} ? $args{Ticket}->CurrentUser : $args{Queue}->CurrentUser;
+
+    # Check queue change fields if changing queue
+    my $new_queue = $ARGSRef->{Queue};
+    if ( $new_queue && $args{Ticket} && $args{Ticket}->Queue != $new_queue ) {
+        my ($core, $cfs, $must_values) = $self->QueueRequiredFields(
+            Ticket  => $args{'Ticket'},
+            To      => $args{ARGSRef}->{Queue},
+        );
+
+        if ( @$core && @$cfs ) {
+            my $new_queue_obj = RT::Queue->new( $CurrentUser );
+            $new_queue_obj->Load( $new_queue );
+            push @errors, @{ $self->_CheckMandatoryFields(
+                    %args,
+                    TransitionType => $CurrentUser->loc('Queue'),
+                    NewValue => $new_queue_obj->Name,
+                    CoreFields => $core,
+                    CustomFields => $cfs,
+                    MustValues => $must_values,
+                ) };
+        }
+    }
+
+    # Check standard status change fields
+    my ($core, $cfs, $must_values) = $self->RequiredFields(
+        Ticket  => $args{'Ticket'},
+        Queue   => $args{'Queue'} ? $args{'Queue'}->Name : undef,
+        From    => $args{'From'},
+        To      => $args{'To'},
+    );
+
+    if ( @$core && @$cfs ) {
+        push @errors, @{ $self->_CheckMandatoryFields(
+                %args,
+                TransitionType => $CurrentUser->loc('Status'),
+                NewValue => $CurrentUser->loc($ARGSRef->{Status}),
+                CoreFields => $core,
+                CustomFields => $cfs,
+                MustValues => $must_values,
+            ) };
+    }
+
+    return \@errors;
+}
+
+sub _CheckMandatoryFields {
+    my $self = shift;
+
+    my %args = (
+        TransitionType => undef,
+        NewValue => undef,
+        CoreFields => undef,
+        CustomFields => undef,
+        MustValues => undef,
+        @_,
+    );
+
+    my $ARGSRef = $args{ARGSRef};
+
+    # Convenience varialbes
+    my ( $type, $new_value, $core, $cfs, $must_values ) = (
+        $args{TransitionType},
+        $args{NewValue},
+        $args{CoreFields},
+        $args{CustomFields},
+        $args{MustValues},
+    );
+
     my @errors;
 
     # Some convenience variables set depending on what gets passed
@@ -358,15 +496,6 @@ sub CheckMandatoryFields {
         $RT::Logger->error("CheckMandatoryFields requires a Ticket object or a Queue object");
         return \@errors;
     }
-
-    my ($core, $cfs, $must_values) = $self->RequiredFields(
-        Ticket  => $args{'Ticket'},
-        Queue   => $args{'Queue'} ? $args{'Queue'}->Name : undef,
-        From    => $args{'From'},
-        To      => $args{'To'},
-    );
-
-    return \@errors unless @$core or @$cfs;
 
     # Check core fields, after canonicalization for update
     for my $field (@$core) {
@@ -385,8 +514,8 @@ sub CheckMandatoryFields {
 
         (my $label = $field) =~ s/(?<=[a-z])(?=[A-Z])/ /g; # /
         push @errors,
-          $CurrentUser->loc("[_1] is required when changing Status to [_2]",
-                                     $label, $CurrentUser->loc($ARGSRef->{Status}));
+          $CurrentUser->loc("[_1] is required when changing [_2] to [_3]",
+                                     $label, $CurrentUser->loc($type), $new_value);
     }
 
     return \@errors unless @$cfs;
@@ -452,13 +581,13 @@ sub CheckMandatoryFields {
                 my $valid_values = join ", ", @must_be;
                 if ( @must_be > 1 ){
                     push @errors,
-                        $CurrentUser->loc("[_1] must be one of: [_3] when changing Status to [_2]",
-                        $cf->Name, $CurrentUser->loc($ARGSRef->{Status}), $valid_values);
+                        $CurrentUser->loc("[_1] must be one of: [_2] when changing [_3] to [_4]",
+                        $cf->Name, $valid_values, $type, $new_value);
                 }
                 else{
                     push @errors,
-                        $CurrentUser->loc("[_1] must be [_3] when changing Status to [_2]",
-                        $cf->Name, $CurrentUser->loc($ARGSRef->{Status}), $valid_values);
+                        $CurrentUser->loc("[_1] must be [_2] when changing [_3] to [_4]",
+                        $cf->Name, $valid_values, $type, $new_value);
                 }
                 next;
             }
@@ -471,13 +600,13 @@ sub CheckMandatoryFields {
                 my $valid_values = join ", ", @must_not_be;
                 if ( @must_not_be > 1 ){
                     push @errors,
-                        $CurrentUser->loc("[_1] must not be one of: [_3] when changing Status to [_2]",
-                        $cf->Name, $CurrentUser->loc($ARGSRef->{Status}), $valid_values);
+                        $CurrentUser->loc("[_1] must not be one of: [_2] when changing [_3] to [_4]",
+                        $cf->Name, $valid_values, $type, $new_value);
                 }
                 else{
                     push @errors,
-                        $CurrentUser->loc("[_1] must not be [_3] when changing Status to [_2]",
-                        $cf->Name, $CurrentUser->loc($ARGSRef->{Status}), $valid_values);
+                        $CurrentUser->loc("[_1] must not be [_2] when changing [_3] to [_4]",
+                        $cf->Name, $valid_values, $type, $new_value);
                 }
                 next;
             }
@@ -491,8 +620,8 @@ sub CheckMandatoryFields {
         next if $args{'Ticket'} && $cf->ValuesForObject($args{'Ticket'})->Count;
 
         push @errors,
-          $CurrentUser->loc("[_1] is required when changing Status to [_2]",
-                                     $cf->Name, $CurrentUser->loc($ARGSRef->{Status}));
+          $CurrentUser->loc("[_1] is required when changing [_2] to [_3]",
+              $cf->Name, $type, $new_value);
     }
 
     return \@errors;
@@ -515,6 +644,12 @@ sub Config {
     return %{$config{$queue}} if $config{$queue};
     return %{$config{'*'}} if $config{'*'};
     return;
+}
+
+sub QueueConfig {
+    my $self  = shift;
+    my %config = RT->Config->Get('MandatoryOnQueueTransition');
+    return %config;
 }
 
 =head1 TODO
