@@ -1,6 +1,6 @@
 NAME
     RT-Extension-MandatoryOnTransition - Require core fields and ticket
-    custom fields on status transitions
+    custom fields on status and/or queue transitions
 
 RT VERSION
     Works with RT 4.0, 4.2, 4.4
@@ -9,10 +9,11 @@ RT VERSION
 
 DESCRIPTION
     This RT extension enforces that certain fields have values before
-    tickets are explicitly moved to or from specified statuses. If you list
-    custom fields which must have a value before a ticket is resolved, those
-    custom fields will automatically show up on the "Resolve" page. The
-    reply/comment won't be allowed until a value is provided.
+    tickets are explicitly moved to or from specified statuses and/or
+    queues. If you list custom fields which must have a value before a
+    ticket is resolved, those custom fields will automatically show up on
+    the "Resolve" page. The reply/comment won't be allowed until a value is
+    provided.
 
     See the configuration example under "INSTALLATION".
 
@@ -96,6 +97,18 @@ CONFIGURATION
 
     The fallback for queues without specific rules is specified with '*'
     where the queue name would normally be.
+
+    To define mandatory fields for queues is quite similar, however you
+    don't need settings per queue as above. To do this you use the
+    %MandatoryOnQueueTransition config option. This ends up looking like:
+
+        Set( %MandatoryOnQueueTransition,
+            'from -> to' => [ 'BasicField', 'CF.MyField', ],
+        );
+
+    In this case, from and to are expected to be valid queue names. As
+    above, from may also be *. All following must_be and must_not_be
+    features work with queues as well.
 
   Requiring Any Value
     Below is an example which requires 1) time worked and filling in a
