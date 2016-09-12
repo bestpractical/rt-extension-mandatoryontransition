@@ -6,6 +6,6 @@ $Named => []
 return if RT->Config->Get('ShowAllCustomFieldsOnMandatoryUpdate');
 return unless @$Named;
 
-$CustomFields->Limit( FIELD => 'Name', VALUE => $_, SUBCLAUSE => 'names', ENTRYAGGREGRATOR => 'OR' )
+$CustomFields->Limit( FIELD => 'Name', VALUE => $_, SUBCLAUSE => 'names', ENTRYAGGREGRATOR => 'OR', CASESENSITIVE => 1 )
     for @$Named;
 </%init>
