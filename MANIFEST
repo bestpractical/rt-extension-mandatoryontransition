@@ -36,3 +36,4 @@ README
 xt/basic.t
 xt/mandatory_on_create.t
 xt/required_fields.t
+SIGNATURE                                Public-key signature (added by MakeMaker)
