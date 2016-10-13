@@ -88,7 +88,6 @@ diag "Try a resolve without TimeWorked";
 
     $m->follow_link_ok( { text => 'Resolve' }, 'Try to resolve ticket');
     $m->content_contains('Test Field');
-    $m->content_lacks('XXX Optional Field ZZZ');
     $m->submit_form_ok( { form_name => 'TicketUpdate',
                           button => 'SubmitTicket',},
                           'Submit resolve with no Time Worked');

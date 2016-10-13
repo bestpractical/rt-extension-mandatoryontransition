@@ -261,6 +261,8 @@ sub RequiredFields {
         Queue   => undef,
         From    => undef,
         To      => undef,
+        NewQueue => undef,
+        ToQueue => undef,
         @_,
     );
 
@@ -269,17 +271,30 @@ sub RequiredFields {
         $args{From}  ||= $args{Ticket}->Status;
     }
     my ($from, $to) = @args{qw(From To)};
-    return ([], []) unless $from and $to;
 
-    my %config = $self->Config($args{Queue});
+    if ($args{NewQueue}) {
+        my $queue = RT::Queue->new(RT->SystemUser);
+        $queue->Load($args{NewQueue});
+        $args{ToQueue} = $queue->Name;
+    }
+
+    my ($from_queue, $to_queue) = ($args{Queue}, $args{ToQueue} || $args{Queue});
+
+    return ([], []) unless ($from and $to) or ($from_queue and $to_queue );
+
+    my %config = ();
+    %config = $self->Config($args{Queue});
+
     return ([], []) unless %config;
 
-    # No transition.
-    return ([], []) if $from eq $to;
+   $to ||= '';
+   $from ||= '';
+   $to_queue ||= '*';
 
     my $required = $config{"$from -> $to"}
                 || $config{"* -> $to"}
                 || $config{"$from -> *"}
+		|| $config{$to_queue}
                 || [];
 
     my %core_supported = map { $_ => 1 } @CORE_SUPPORTED;
@@ -364,9 +379,12 @@ sub CheckMandatoryFields {
         Queue   => $args{'Queue'} ? $args{'Queue'}->Name : undef,
         From    => $args{'From'},
         To      => $args{'To'},
+	NewQueue => $$ARGSRef{'Queue'},
     );
 
     return \@errors unless @$core or @$cfs;
+
+    my $transition =  ($args{'From'} ||'') ne ($args{'To'} || '') ? 'Status' : 'Queue';
 
     # Check core fields, after canonicalization for update
     for my $field (@$core) {
@@ -385,8 +403,8 @@ sub CheckMandatoryFields {
 
         (my $label = $field) =~ s/(?<=[a-z])(?=[A-Z])/ /g; # /
         push @errors,
-          $CurrentUser->loc("[_1] is required when changing Status to [_2]",
-                                     $label, $CurrentUser->loc($ARGSRef->{Status}));
+          $CurrentUser->loc("[_1] is required when changing [_2] to [_3]",
+            $label, $CurrentUser->loc($transition),  $CurrentUser->loc($ARGSRef->{$transition}));
     }
 
     return \@errors unless @$cfs;
@@ -452,13 +470,13 @@ sub CheckMandatoryFields {
                 my $valid_values = join ", ", @must_be;
                 if ( @must_be > 1 ){
                     push @errors,
-                        $CurrentUser->loc("[_1] must be one of: [_3] when changing Status to [_2]",
-                        $cf->Name, $CurrentUser->loc($ARGSRef->{Status}), $valid_values);
+                        $CurrentUser->loc("[_1] must be one of: [_4] when changing [_2] to [_3]",
+                        $cf->Name, $CurrentUser->loc($transition), $CurrentUser->loc($ARGSRef->{$transition}), $valid_values);
                 }
                 else{
                     push @errors,
-                        $CurrentUser->loc("[_1] must be [_3] when changing Status to [_2]",
-                        $cf->Name, $CurrentUser->loc($ARGSRef->{Status}), $valid_values);
+                        $CurrentUser->loc("[_1] must be [_4] when changing [_2] to [_3]",
+                        $cf->Name, $CurrentUser->loc($transition),  $CurrentUser->loc($ARGSRef->{$transition}), $valid_values);
                 }
                 next;
             }
@@ -471,13 +489,13 @@ sub CheckMandatoryFields {
                 my $valid_values = join ", ", @must_not_be;
                 if ( @must_not_be > 1 ){
                     push @errors,
-                        $CurrentUser->loc("[_1] must not be one of: [_3] when changing Status to [_2]",
-                        $cf->Name, $CurrentUser->loc($ARGSRef->{Status}), $valid_values);
+                        $CurrentUser->loc("[_1] must not be one of: [_4] when changing [_2] to [_3]",
+                        $cf->Name, $CurrentUser->loc($transition), $CurrentUser->loc($ARGSRef->{$transition}), $valid_values);
                 }
                 else{
                     push @errors,
-                        $CurrentUser->loc("[_1] must not be [_3] when changing Status to [_2]",
-                        $cf->Name, $CurrentUser->loc($ARGSRef->{Status}), $valid_values);
+                        $CurrentUser->loc("[_1] must not be [_4] when changing [_2] to [_3]",
+                        $cf->Name, $CurrentUser->loc($transition),$CurrentUser->loc($ARGSRef->{$transition}), $valid_values);
                 }
                 next;
             }
@@ -491,8 +509,8 @@ sub CheckMandatoryFields {
         next if $args{'Ticket'} && $cf->ValuesForObject($args{'Ticket'})->Count;
 
         push @errors,
-          $CurrentUser->loc("[_1] is required when changing Status to [_2]",
-                                     $cf->Name, $CurrentUser->loc($ARGSRef->{Status}));
+          $CurrentUser->loc("[_1] is required when changing [_2] to [_3]",
+                                     $cf->Name, $CurrentUser->loc($transition), $CurrentUser->loc($ARGSRef->{$transition}));
     }
 
     return \@errors;
