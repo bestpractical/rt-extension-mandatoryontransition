@@ -2,7 +2,7 @@ use strict;
 use warnings;
 package RT::Extension::MandatoryOnTransition;
 
-our $VERSION = '0.13';
+our $VERSION = '0.14';
 
 =head1 NAME
 
@@ -27,6 +27,8 @@ See the configuration example under L</INSTALLATION>.
 =head2 Supported fields
 
 This extension only enforces mandatory-ness on defined status transitions.
+It also supports defining mandatory fields when transitioning a ticket
+from one queue to another.
 
 =head3 Basics
 
@@ -136,12 +138,35 @@ Category selection before resolving tickets in every other queue.
             '* -> resolved' => ['TimeWorked', 'CF.Resolution'],
         },
         '*' => {
-            '* -> resolved' => 'CF.Category',
+            '* -> resolved' => ['CF.Category'],
         },
     );
 
 The transition syntax is similar to that found in RT's Lifecycles.  See
 C<perldoc /opt/rt4/etc/RT_Config.pm>.
+
+=head2 Restrictions on Queue Transitions
+
+The default behavior for C<MandatoryOnTransition> operates on status transitions,
+so a change from C<new> to C<open> or from C<open> to C<resolved>. It also supports
+making fields mandatory when transitioning from one queue to another. To define
+fields that are required when changing the queue for a ticket, add an entry to
+the configuration like this:
+
+    Set( %MandatoryOnTransition,
+        Helpdesk => {
+            'Engineering' => ['CF.Category'],
+        },
+    );
+
+The key is the destination queue and the values are the mandatory fields. In this
+case, before a user can move a ticket from the Helpdesk queue to the
+Engineering queue, they must provide a value for Category, possibly something like
+"bug" or "feature request".
+
+Note that this configuration makes the most sense if the custom fields are applied
+to both queues. Otherwise the users on the destination queue won't be able to see
+the required values.
 
 =head2 Requiring or Restricting Specific Values
 

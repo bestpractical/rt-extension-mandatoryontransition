@@ -1,3 +1,6 @@
+0.14 2016-10-14
+ - Add ability to mark fields as mandatory on queue transitions
+
 0.13 2016-07-14
 - Packaging fixes; reinstate latest Module::Install::RTx.  Fixes
   cpan#116138.
