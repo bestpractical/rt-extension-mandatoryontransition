@@ -32,8 +32,7 @@ diag "Test mandatory fields on create";
                           fields => { Queue => 'General',},
                         }, 'Click button to create ticket');
 
-    print STDERR RT::Extension::MandatoryOnTransition::Test::RTAtorNewerThan('4.3.0');
-    if (RT::Extension::MandatoryOnTransition::Test::RTAtorNewerThan('4.4.0')){
+    if (RT::Handle::cmp_version( '4.4.0', $RT::VERSION) <= 0) {
         $m->title_is('Create a new ticket in General');
     }
     else{
