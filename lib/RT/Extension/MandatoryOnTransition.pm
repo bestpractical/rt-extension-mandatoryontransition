@@ -76,6 +76,12 @@ SelfService, for example.  See L</TODO> for others.
 On 4.0, Basics and Jumbo are not supported because they do not have the
 needed code, which is present in 4.2.
 
+=head2 Multiple-entry CFs do not play well with C<must_be> and C<must_not_be>
+
+The C<must_be> and C<must_not_be> configurations are currently not
+well-defined for multiply-valued CFs.  At current, only their first
+value is validated against the configured whitelist or blacklist.
+
 =head1 INSTALLATION
 
 =over
@@ -485,11 +491,29 @@ sub CheckMandatoryFields {
             my $submitted = $CFArgs->{$cf->id};
             # Pick the first grouping
             $submitted = $submitted ? $submitted->{(sort keys %$submitted)[0]} : {};
-            $value = $submitted->{Values} // $submitted->{Value};
+
+            my @values;
+            for my $argtype (qw/Values Value/) {
+                next if @values;
+                @values = HTML::Mason::Commands::_NormalizeObjectCustomFieldValue(
+                    CustomField => $cf,
+                    Param => "Object-RT::Ticket-".$TicketId."-CustomField-".$cf->Id."-".$argtype,
+                    Value => $submitted->{$argtype},
+                );
+            }
+            # TODO: Understand multi-value CFs
+            ($value) = @values;
         }
         else {
             my $arg   = "Object-RT::Ticket-".$TicketId."-CustomField-".$cf->Id."-Value";
             $value = ($ARGSRef->{"${arg}s-Magic"} and exists $ARGSRef->{"${arg}s"}) ? $ARGSRef->{$arg . "s"} : $ARGSRef->{$arg};
+            ($value) = grep length, map {
+                s/\r+\n/\n/g;
+                s/^\s+//;
+                s/\s+$//;
+                $_;
+                }
+                grep defined, $value;
         }
 
         # Check for specific values
@@ -498,6 +522,7 @@ sub CheckMandatoryFields {
 
             if ( not defined $cf_value and $args{'Ticket'} ){
                 # Fetch the current value if we didn't receive a new one
+                # TODO: Understand multi-value CFs
                 $cf_value = $args{'Ticket'}->FirstCustomFieldValue($cf->Name);
             }
 
