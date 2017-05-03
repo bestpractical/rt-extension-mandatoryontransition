@@ -30,7 +30,7 @@ sub import {
         $args{'testing'} = 'RT::Extension::MandatoryOnTransition';
     }
 
-    $args{'config'} =<<CONFIG;
+    $args{'config'} ||=<<CONFIG;
 Set( %MandatoryOnTransition,
     '*' => {
         'open -> resolved' => [qw(TimeWorked TimeTaken)]
