@@ -431,12 +431,22 @@ sub CheckMandatoryFields {
 
     my $transition =  ($args{'From'} ||'') ne ($args{'To'} || '') ? 'Status' : 'Queue';
 
+    # If we were called from Modify.html (Basics) or ModifyAll.html
+    # (Jumbo), where the SubmitTicket button goes by 'Save Changes',
+    # then set the form field name for Time Worked to 'TimeWorked' in
+    # our local copy of %CORE_FOR_UPDATE
+    my %CORE_FOR_UPDATE_COPY = %CORE_FOR_UPDATE;
+    if ( $ARGSRef->{'SubmitTicket'} eq 'Save Changes' ) {
+        $CORE_FOR_UPDATE_COPY{'TimeWorked'} = 'TimeWorked';
+        $CORE_FOR_UPDATE_COPY{'TimeTaken'} = 'TimeWorked';
+    }
+
     # Check core fields, after canonicalization for update
     for my $field (@$core) {
 
         # Will we have a value on update/create?
         my $arg = $args{'Ticket'}
-            ? $CORE_FOR_UPDATE{$field}
+            ? $CORE_FOR_UPDATE_COPY{$field}
             : $CORE_FOR_CREATE{$field};
         next unless $arg;
         next if defined $ARGSRef->{$arg} and length $ARGSRef->{$arg};
