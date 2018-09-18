@@ -298,7 +298,7 @@ sub RequiredFields {
     );
 
     if ($args{Ticket}) {
-        $args{Queue} ||= $args{Ticket}->QueueObj->Name;
+        $args{Queue} ||= $args{Ticket}->QueueObj->__Value('Name');
         $args{From}  ||= $args{Ticket}->Status;
     }
     my ($from, $to) = @args{qw(From To)};
