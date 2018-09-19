@@ -1,5 +1,6 @@
 Changes
 html/Callbacks/RT-Extension-MandatoryOnTransition/Elements/EditCustomFields/BeforeCustomFields
+html/Callbacks/RT-Extension-MandatoryOnTransition/Elements/EditCustomFields/MassageCustomFields
 html/Callbacks/RT-Extension-MandatoryOnTransition/m/ticket/create/BeforeCreate
 html/Callbacks/RT-Extension-MandatoryOnTransition/m/ticket/reply/AfterWorked
 html/Callbacks/RT-Extension-MandatoryOnTransition/m/ticket/reply/BeforeUpdate
