@@ -650,7 +650,7 @@ or via the web at
 
 =head1 LICENSE AND COPYRIGHT
 
-This software is Copyright (c) 2012-2014 by Best Pracical Solutions, LLC.
+This software is Copyright (c) 2012-2018 by Best Pracical Solutions, LLC.
 
 This is free software, licensed under:
 
