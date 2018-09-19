@@ -1,3 +1,6 @@
+0.16 2018-09-19
+ - Don't check permission to get queue name from ticket in RequiredFields
+
 0.15 2017-05-04
  - Fix an issue where ticket updates would alter
    %CORE_FOR_UPDATE. This prevented status transitions when the config
