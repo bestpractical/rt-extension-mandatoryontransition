@@ -37,4 +37,5 @@ README
 xt/basic.t
 xt/immutable_core_for_update.t
 xt/mandatory_on_create.t
+xt/queue_change.t
 xt/required_fields.t
