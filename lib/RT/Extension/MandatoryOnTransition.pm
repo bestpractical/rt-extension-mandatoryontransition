@@ -252,16 +252,18 @@ pair to %CORE_FOR_UPDATE and/or %CORE_FOR_CREATE.
 
 =cut
 
-our @CORE_SUPPORTED  = qw(Content TimeWorked TimeTaken);
-our @CORE_TICKET     = qw(TimeWorked);
+our @CORE_SUPPORTED  = qw(Content TimeWorked TimeTaken Owner);
+our @CORE_TICKET     = qw(TimeWorked Owner);
 our %CORE_FOR_UPDATE = (
     TimeWorked  => 'UpdateTimeWorked',
     TimeTaken   => 'UpdateTimeWorked',
     Content     => 'UpdateContent',
+    Owner       => 'Owner',
 );
 our %CORE_FOR_CREATE = (
     TimeWorked  => 'TimeWorked',
     Content     => 'Content',
+    Owner       => 'Owner',
 );
 
 =head2 Methods
@@ -449,6 +451,37 @@ sub CheckMandatoryFields {
             ? $CORE_FOR_UPDATE_COPY{$field}
             : $CORE_FOR_CREATE{$field};
         next unless $arg;
+
+        if ($field eq 'Owner') {
+            my $value;
+
+            # There are 2 Owner fields on Jumbo page, copied the same handling from it.
+            if (ref $ARGSRef->{$arg}) {
+                foreach my $owner (@{$ARGSRef->{$arg}}) {
+                    if (defined($owner) && $owner =~ /\D/) {
+                        $value = $owner unless ($args{'Ticket'}->OwnerObj->Name eq $owner);
+                    }
+                    elsif (length $owner) {
+                        $value = $owner unless ($args{'Ticket'}->OwnerObj->id == $owner);
+                    }
+                }
+            }
+            else {
+                $value = $ARGSRef->{$arg};
+            }
+
+            if (($value || $args{'Ticket'}->$field()) == $RT::Nobody->id) {
+                push @errors,
+                  $CurrentUser->loc(
+                    "[_1] is required when changing [_2] to [_3]",
+                    $field,
+                    $CurrentUser->loc($transition),
+                    $CurrentUser->loc($field_label{$transition})
+                  );
+                next;
+            }
+        }
+
         next if defined $ARGSRef->{$arg} and length $ARGSRef->{$arg};
 
         # Do we have a value currently?
