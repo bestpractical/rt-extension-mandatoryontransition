@@ -50,6 +50,11 @@ field on the update page.
 
 Requires that the Worked field on the update page is non-zero.
 
+=item Owner
+
+Requires that the ticket has a real Owner or the real Owner will be set on
+the update page.
+
 =back
 
 A larger set of basic fields may be supported in future releases.  If you'd
