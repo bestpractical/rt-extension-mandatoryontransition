@@ -451,13 +451,13 @@ sub CheckMandatoryFields {
             ? $CORE_FOR_UPDATE_COPY{$field}
             : $CORE_FOR_CREATE{$field};
         next unless $arg;
-        next if defined $ARGSRef->{$arg} and length $ARGSRef->{$arg};
         if ($field eq 'Owner' and $args{'Ticket'}->$field() == $RT::Nobody->id) {
             push @errors,
                 $CurrentUser->loc("[_1] is required when changing [_2] to [_3]",
                                   $field, $CurrentUser->loc($transition),  $CurrentUser->loc($field_label{$transition}));
             next;
         }
+        next if defined $ARGSRef->{$arg} and length $ARGSRef->{$arg};
 
         # Do we have a value currently?
         # In Create the ticket hasn't been created yet.
