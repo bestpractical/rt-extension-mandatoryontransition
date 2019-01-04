@@ -16,4 +16,11 @@ if (@$errors_ref) {
     $$skip_update = 1;
     push @$results, @$errors_ref;
 }
+
+# Allow mandatory roles to be set on update page
+foreach my $key (keys %{$ARGSRef}) {
+    if ( $key =~ /^WatcherAddressEmail(\d*)$/ && not $ARGSRef->{$key} ) {
+        $ARGSRef->{"WatcherTypeEmail$1"} = undef;
+    }
+}
 </%init>

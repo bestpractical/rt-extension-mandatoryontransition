@@ -127,7 +127,7 @@ config option.  This option takes the generic form of:
 
     Set( %MandatoryOnTransition,
         'QueueName' => {
-            'from -> to' => [ 'BasicField', 'CF.MyField', ],
+            'from -> to' => [ 'BasicField', 'CF.MyField', 'CustomRole.MyRole' ],
         },
     );
 
@@ -146,7 +146,8 @@ Category selection before resolving tickets in every other queue.
 
     Set( %MandatoryOnTransition,
         Helpdesk => {
-            '* -> resolved' => ['TimeWorked', 'CF.Resolution'],
+            '* -> resolved'      => ['TimeWorked', 'CF.Resolution', 'CustomRole.Analyst'],
+            'CustomRole.Analyst' => {transition => '* -> open', group => 'Engineering'},
         },
         '*' => {
             '* -> resolved' => ['CF.Category'],
@@ -323,7 +324,7 @@ sub RequiredFields {
     my %config = ();
     %config = $self->Config($args{Queue});
 
-    return ([], []) unless %config;
+    return ([], [], []) unless %config;
 
    $to ||= '';
    $from ||= '';
@@ -340,6 +341,8 @@ sub RequiredFields {
     my @core = grep { !/^CF\./i && $core_supported{$_} } @$required;
     my @cfs  =  map { /^CF\.(.+)$/i; $1; }
                grep { /^CF\./i } @$required;
+    my @roles = map { /^(:?[CustomRole\.]?.+)$/i; $1; }
+               grep { /^CustomRole\./i } @$required;
 
     # Pull out any must_be or must_not_be rules
     my %cf_must_values = ();
@@ -359,7 +362,8 @@ sub RequiredFields {
             }
         }
     }
-    return (\@core, \@cfs, \%cf_must_values);
+
+    return (\@core, \@cfs, \@roles, \%cf_must_values);
 }
 
 =head3 CheckMandatoryFields
@@ -426,15 +430,14 @@ sub CheckMandatoryFields {
         return \@errors;
     }
 
-    my ($core, $cfs, $must_values) = $self->RequiredFields(
+    my ($core, $cfs, $roles, $must_values) = $self->RequiredFields(
         Ticket  => $args{'Ticket'},
         Queue   => $args{'Queue'} ? $args{'Queue'}->Name : undef,
         From    => $args{'From'},
         To      => $args{'To'},
         NewQueue => $$ARGSRef{'Queue'},
     );
-
-    return \@errors unless @$core or @$cfs;
+    return \@errors unless @$core or @$cfs or @$roles;
 
     my $transition =  ($args{'From'} ||'') ne ($args{'To'} || '') ? 'Status' : 'Queue';
 
@@ -498,6 +501,51 @@ sub CheckMandatoryFields {
         push @errors,
           $CurrentUser->loc("[_1] is required when changing [_2] to [_3]",
             $label, $CurrentUser->loc($transition),  $CurrentUser->loc($field_label{$transition}));
+    }
+
+    if (@$roles) {
+        foreach my $role (@$roles) {
+            my ( $role_values, $owner_value );
+            my ( $role_arg, $role_full ) = ( $role, $role );
+
+            if ( $role =~ s/^CustomRole\.//i ) {
+                my $role_object = RT::CustomRole->new( $args{Ticket}->CurrentUser );
+
+                my ( $ret, $msg ) = $role_object->Load($role);
+                push @errors, $CurrentUser->loc("Failed to load custom role $role:  $msg") unless $ret;
+                next unless $role_object->Id;
+
+                $role_arg = 'RT::CustomRole-' . $role_object->Id;
+
+                $role_values = $args{Ticket}->RoleGroup( $role_object->GroupType );
+                push @errors, $CurrentUser->loc("Could not load current user") unless $role_values;
+            }
+
+            my @role_values;
+            # Use this to keep track of input fields that use a count increment
+            # example: WatcherAddressEmail1 or WatcherAddressEmail2
+            my @row_input_num = grep $role_arg eq $ARGSRef->{$_}, keys %{$ARGSRef};
+            map { push @role_values, $ARGSRef->{$_} if $ARGSRef->{$_} } grep /$role_arg/, keys %{$ARGSRef};
+
+            # Grab our arguments for current role
+            if (@row_input_num) {
+                map { push @role_values, $ARGSRef->{"WatcherAddressEmail$_"}
+                      if $ARGSRef->{"WatcherAddressEmail$_"}
+                  }
+                map { $_ =~ /^WatcherTypeEmail(\d*)$/; $1 } @row_input_num;
+            }
+            my @temp_array = $role_values->MemberEmailAddresses;
+            push @role_values, @temp_array if scalar @temp_array;
+
+            if ( $args{'To'} && ( not scalar @role_values ) ) {
+                push @errors, $CurrentUser->loc("[_1] is required when changing [_2] to [_3]",
+                    $role,
+                    $CurrentUser->loc($transition),
+                    $CurrentUser->loc( $args{'To'} )
+                );
+                next;
+            }
+        }
     }
 
     return \@errors unless @$cfs;

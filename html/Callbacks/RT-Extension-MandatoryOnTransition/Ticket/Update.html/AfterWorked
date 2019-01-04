@@ -2,11 +2,11 @@
 $Ticket
 </%args>
 <%init>
-my ($core, $cfs) = RT::Extension::MandatoryOnTransition->RequiredFields(
+my ($core, $cfs, $roles) = RT::Extension::MandatoryOnTransition->RequiredFields(
     Ticket  => $Ticket,
     To      => $ARGS{'Status'} || $ARGS{'DefaultStatus'},
 );
-return unless @$cfs;
+return unless @$cfs or @$roles;
 
 my $comp = '/Elements/EditCustomFields';
 my %obj_args = ( Object => $Ticket );
@@ -17,11 +17,42 @@ if (!$m->comp_exists('/Elements/EditCustomFields')) {
     %obj_args = ( TicketObj => $Ticket );
 }
 
+my @roles;
+foreach my $role (@{$roles}) {
+    if ( $role =~ s/^CustomRole\.//i ) {
+        my $role_object = RT::CustomRole->new($session{CurrentUser});
+        my ($ret, $msg) = $role_object->Load($role);
+
+        RT::Logger->error($msg) unless $ret;
+        push @roles, $role_object if $ret;
+    }
+}
 </%init>
 %# 'Named' is handled by this extension in the MassageCustomFields callback
-<& $comp,
-    %ARGS,
-    %obj_args,
-    InTable     => 1,
-    Named       => $cfs,
-    &>
+% if ( @$cfs ) {
+    <& $comp,
+        %ARGS,
+        %obj_args,
+        InTable     => 1,
+        Named       => $cfs,
+        &>
+% }
+% if ( @$roles ) {
+% my $count = 0;
+%     foreach my $role (@roles) {
+<input type='hidden' name="WatcherTypeEmail<% $count %>" value=<% $role->Name %>></input>
+        <tr>
+            <td class="label"><% $role->Name %>:</td>
+            <td class="entry">
+                <& /Elements/EmailInput,
+                    Name => 'RT::CustomRole-' . $role->Id,
+                    Autocomplete       => 1,
+                    AutocompleteNobody => 1,
+                    AutocompleteReturn => "Name",
+                    Size               => 20,
+                &>
+            </td>
+        </tr>
+%     $count++;
+%     }
+% }
