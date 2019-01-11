@@ -14,8 +14,8 @@ diag "Test RequiredFields without a ticket";
                        );
     is( $core->[0], 'TimeWorked', 'Got TimeWorked for required core');
 
-    my $must_values;
-    ($core, $cf, $must_values) = RT::Extension::MandatoryOnTransition->RequiredFields(
+    my ($must_values, $role, $role_group_values);
+    ($core, $cf, $role, $must_values, $role_group_values) = RT::Extension::MandatoryOnTransition->RequiredFields(
                            From => "''",
                            To   => 'resolved',
                            Queue => 'General',
@@ -41,7 +41,7 @@ diag "Test RequiredFields with a ticket";
 
     ok( $t->id, 'Created test ticket: ' . $t->id);
 
-    my ($core, $cf, $must_values) = RT::Extension::MandatoryOnTransition->RequiredFields(
+    my ($core, $cf, $roles, $must_values, $role_group_values) = RT::Extension::MandatoryOnTransition->RequiredFields(
                            Ticket => $t,
                            To   => 'resolved',
                        );
