@@ -50,11 +50,6 @@ field on the update page.
 
 Requires that the Worked field on the update page is non-zero.
 
-=item Owner
-
-Requires that the ticket has a real Owner or the real Owner will be set on
-the update page.
-
 =back
 
 A larger set of basic fields may be supported in future releases.  If you'd
@@ -156,6 +151,34 @@ Category selection before resolving tickets in every other queue.
 
 The transition syntax is similar to that found in RT's Lifecycles.  See
 C<perldoc /opt/rt4/etc/RT_Config.pm>.
+
+=head2 Requiring role values
+
+You can require any core or custom role on a RT::Ticket object, below is an
+example of requiring a custom role "customer" be set on transition from open
+and the owner also be set for the ticket on transition from a status of open.
+
+Set( %MandatoryOnTransition,
+    'General' => {
+        '* -> resolved' => ['CustomRole.customer', 'Owner']
+        'CustomRole.customer' => { transition => 'open -> *' },
+        'Owner' => { transition => 'open -> *' },
+    },
+);
+
+=head2 Role Membership in a Group
+
+Roles can require the members of the role to also be a member of a group
+before satisfying to mandatory condition. Below we require that the Owner
+role be set and that the member it is set to is a member of the group
+'SupportReps' or 'Admins'.
+
+Set( %MandatoryOnTransition,
+    'General' => {
+        'open -> *' => ['Owner'],
+        'Owner' => { transition => 'open -> *', group => ['SupportReps', 'Admins'] }
+    }
+);
 
 =head2 Restrictions on Queue Transitions
 

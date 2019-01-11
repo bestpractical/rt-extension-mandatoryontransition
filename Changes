@@ -1,3 +1,8 @@
+0.17 2019-01-23
+ - Add support for custom roles as a mandatory field
+ - Add support for all RT core roles as a mandatory field
+ - Add support for requiring group membership for roles
+
 0.17 2018-10-26
  - Add support for Owner as a mandatory field
 
