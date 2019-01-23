@@ -25,6 +25,12 @@ foreach my $role (@{$roles}) {
 
         RT::Logger->error($msg) unless $ret;
         push @roles, $role_object if $ret;
+    } else {
+        my $role_group = RT::Group->new($session{CurrentUser});
+        my ($ret, $msg) = $role_group->LoadRoleGroup(Object => $Ticket, Name => $role);
+
+        RT::Logger->error($msg) unless $ret;
+        push @roles, $role_group if $ret;
     }
 }
 </%init>
@@ -40,12 +46,13 @@ foreach my $role (@{$roles}) {
 % if ( @$roles ) {
 % my $count = 0;
 %     foreach my $role (@roles) {
+%     next if $role->Name eq 'Owner';
 <input type='hidden' name="WatcherTypeEmail<% $count %>" value=<% $role->Name %>></input>
         <tr>
             <td class="label"><% $role->Name %>:</td>
             <td class="entry">
                 <& /Elements/EmailInput,
-                    Name => 'RT::CustomRole-' . $role->Id,
+                    Name => grep ($role->Name eq $_, qw/Requestor AdminCc Cc/) ? "WatcherAddressEmail$count" : 'RT::CustomRole-' . $role->Id,
                     Autocomplete       => 1,
                     AutocompleteNobody => 1,
                     AutocompleteReturn => "Name",

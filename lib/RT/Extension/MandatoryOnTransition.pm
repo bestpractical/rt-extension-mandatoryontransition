@@ -258,18 +258,16 @@ pair to %CORE_FOR_UPDATE and/or %CORE_FOR_CREATE.
 
 =cut
 
-our @CORE_SUPPORTED  = qw(Content TimeWorked TimeTaken Owner);
-our @CORE_TICKET     = qw(TimeWorked Owner);
+our @CORE_SUPPORTED  = qw(Content TimeWorked TimeTaken);
+our @CORE_TICKET     = qw(TimeWorked);
 our %CORE_FOR_UPDATE = (
     TimeWorked  => 'UpdateTimeWorked',
     TimeTaken   => 'UpdateTimeWorked',
     Content     => 'UpdateContent',
-    Owner       => 'Owner',
 );
 our %CORE_FOR_CREATE = (
     TimeWorked  => 'TimeWorked',
     Content     => 'Content',
-    Owner       => 'Owner',
 );
 
 =head2 Methods
@@ -342,7 +340,7 @@ sub RequiredFields {
     my @cfs  =  map { /^CF\.(.+)$/i; $1; }
                grep { /^CF\./i } @$required;
     my @roles = map { /^(:?[CustomRole\.]?.+)$/i; $1; }
-               grep { /^CustomRole\./i } @$required;
+               grep { /^CustomRole\.|^AdminCc|^Cc|^Requestor|^Owner/i } @$required;
 
     # Pull out any must_be or must_not_be rules
     my %cf_must_values = ();
@@ -460,36 +458,6 @@ sub CheckMandatoryFields {
             : $CORE_FOR_CREATE{$field};
         next unless $arg;
 
-        if ($field eq 'Owner') {
-            my $value;
-
-            # There are 2 Owner fields on Jumbo page, copied the same handling from it.
-            if (ref $ARGSRef->{$arg}) {
-                foreach my $owner (@{$ARGSRef->{$arg}}) {
-                    if (defined($owner) && $owner =~ /\D/) {
-                        $value = $owner unless ($args{'Ticket'}->OwnerObj->Name eq $owner);
-                    }
-                    elsif (length $owner) {
-                        $value = $owner unless ($args{'Ticket'}->OwnerObj->id == $owner);
-                    }
-                }
-            }
-            else {
-                $value = $ARGSRef->{$arg};
-            }
-
-            if (($value || $args{'Ticket'}->$field()) == $RT::Nobody->id) {
-                push @errors,
-                  $CurrentUser->loc(
-                    "[_1] is required when changing [_2] to [_3]",
-                    $field,
-                    $CurrentUser->loc($transition),
-                    $CurrentUser->loc($field_label{$transition})
-                  );
-                next;
-            }
-        }
-
         next if defined $ARGSRef->{$arg} and length $ARGSRef->{$arg};
 
         # Do we have a value currently?
@@ -519,6 +487,35 @@ sub CheckMandatoryFields {
 
                 $role_values = $args{Ticket}->RoleGroup( $role_object->GroupType );
                 push @errors, $CurrentUser->loc("Could not load current user") unless $role_values;
+            } elsif ( $role eq 'Owner' ) {
+                # There are 2 Owner fields on Jumbo page, copied the same handling from it.
+                if ( ref $ARGSRef->{$role} ) {
+                    foreach my $owner ( @{ $ARGSRef->{$role} } ) {
+                        if ( defined($owner) && $owner =~ /\D/ ) {
+                            $owner_value = $owner unless ( $args{'Ticket'}->OwnerObj->Name eq $owner );
+                        }
+                        elsif ( length $owner ) {
+                            $owner_value = $owner unless ($args{'Ticket'}->OwnerObj->id == $owner );
+                        }
+                    }
+                }
+                else {
+                    $owner_value = $ARGSRef->{$role};
+                }
+                if ( $owner_value ) {
+                    my $user = RT::User->new( $args{Ticket}->CurrentUser );
+                    $user->Load($owner_value);
+                    push @errors, $CurrentUser->loc("Could not load user: $owner_value") unless $user->Id;
+                    $role_values = $user->EmailAddress if $user->Id;
+                }
+            }
+            else {
+                $role_values = RT::Group->new( $args{Ticket}->CurrentUser );
+                my ( $ret, $msg ) = $role_values->LoadRoleGroup(
+                    Object => $args{Ticket},
+                    Name   => $role
+                );
+                push @errors, $CurrentUser->loc("Failed to load role $role for ticket: $msg") unless $ret;
             }
 
             my @role_values;
@@ -534,8 +531,6 @@ sub CheckMandatoryFields {
                   }
                 map { $_ =~ /^WatcherTypeEmail(\d*)$/; $1 } @row_input_num;
             }
-            my @temp_array = $role_values->MemberEmailAddresses;
-            push @role_values, @temp_array if scalar @temp_array;
 
             if ( $args{'To'} && ( not scalar @role_values ) ) {
                 push @errors, $CurrentUser->loc("[_1] is required when changing [_2] to [_3]",
