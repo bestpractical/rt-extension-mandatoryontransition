@@ -117,6 +117,7 @@ CONFIGURATION
             Helpdesk => {
                 '* -> resolved'      => ['TimeWorked', 'CF.Resolution', 'CustomRole.Analyst'],
                 'CustomRole.Analyst' => {transition => '* -> open', group => 'Engineering'},
+                '* -> resolved' => ['TimeWorked', 'CF.Resolution', 'CustomRole.Analyst'],
             },
             '*' => {
                 '* -> resolved' => ['CF.Category'],
