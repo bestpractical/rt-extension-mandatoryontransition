@@ -96,7 +96,7 @@ CONFIGURATION
 
         Set( %MandatoryOnTransition,
             'QueueName' => {
-                'from -> to' => [ 'BasicField', 'CF.MyField', ],
+                'from -> to' => [ 'BasicField', 'CF.MyField', 'CustomRole.MyRole' ],
             },
         );
 
@@ -115,7 +115,8 @@ CONFIGURATION
 
         Set( %MandatoryOnTransition,
             Helpdesk => {
-                '* -> resolved' => ['TimeWorked', 'CF.Resolution'],
+                '* -> resolved'      => ['TimeWorked', 'CF.Resolution', 'CustomRole.Analyst'],
+                'CustomRole.Analyst' => {transition => '* -> open', group => 'Engineering'},
             },
             '*' => {
                 '* -> resolved' => ['CF.Category'],

@@ -127,7 +127,7 @@ config option.  This option takes the generic form of:
 
     Set( %MandatoryOnTransition,
         'QueueName' => {
-            'from -> to' => [ 'BasicField', 'CF.MyField', ],
+            'from -> to' => [ 'BasicField', 'CF.MyField', 'CustomRole.MyRole' ],
         },
     );
 
@@ -146,7 +146,8 @@ Category selection before resolving tickets in every other queue.
 
     Set( %MandatoryOnTransition,
         Helpdesk => {
-            '* -> resolved' => ['TimeWorked', 'CF.Resolution'],
+            '* -> resolved'      => ['TimeWorked', 'CF.Resolution', 'CustomRole.Analyst'],
+            'CustomRole.Analyst' => {transition => '* -> open', group => 'Engineering'},
         },
         '*' => {
             '* -> resolved' => ['CF.Category'],
@@ -275,9 +276,10 @@ our %CORE_FOR_CREATE = (
 
 =head3 RequiredFields
 
-Returns two array refs of required fields for the described status transition.
-The first is core fields, the second is CF names.  Returns empty array refs
-on error or if nothing is required.
+Returns three array refs of required fields for the described status transition.
+The first is core fields, the second is CF names, the third is roles.  Returns
+empty array refs on error or if nothing is required. A forth parameter is a
+hashref of must-have values for custom fields.
 
 Takes a paramhash with the keys Ticket, Queue, From, and To.  Ticket should be
 an object.  Queue should be a name.  From and To should be statuses.  If you
@@ -340,6 +342,8 @@ sub RequiredFields {
     my @core = grep { !/^CF\./i && $core_supported{$_} } @$required;
     my @cfs  =  map { /^CF\.(.+)$/i; $1; }
                grep { /^CF\./i } @$required;
+    my @roles = map { /^(:?[CustomRole\.]?.+)$/i; $1; }
+               grep { /^CustomRole\./i } @$required;
 
     # Pull out any must_be or must_not_be rules
     my %cf_must_values = ();
@@ -359,7 +363,8 @@ sub RequiredFields {
             }
         }
     }
-    return (\@core, \@cfs, \%cf_must_values);
+
+    return (\@core, \@cfs, \@roles, \%cf_must_values);
 }
 
 =head3 CheckMandatoryFields
@@ -426,15 +431,14 @@ sub CheckMandatoryFields {
         return \@errors;
     }
 
-    my ($core, $cfs, $must_values) = $self->RequiredFields(
+    my ($core, $cfs, $roles, $must_values) = $self->RequiredFields(
         Ticket  => $args{'Ticket'},
         Queue   => $args{'Queue'} ? $args{'Queue'}->Name : undef,
         From    => $args{'From'},
         To      => $args{'To'},
         NewQueue => $$ARGSRef{'Queue'},
     );
-
-    return \@errors unless @$core or @$cfs;
+    return \@errors unless @$core or @$cfs or @$roles;
 
     my $transition =  ($args{'From'} ||'') ne ($args{'To'} || '') ? 'Status' : 'Queue';
 
@@ -498,6 +502,44 @@ sub CheckMandatoryFields {
         push @errors,
           $CurrentUser->loc("[_1] is required when changing [_2] to [_3]",
             $label, $CurrentUser->loc($transition),  $CurrentUser->loc($field_label{$transition}));
+    }
+
+    if (@$roles and $args{'To'}) {
+        foreach my $role (@$roles) {
+            my $role_values;
+            my ( $role_arg, $role_full ) = ( $role, $role );
+
+            if ( $role =~ s/^CustomRole\.//i ) {
+                my $role_object = RT::CustomRole->new( $args{Ticket}->CurrentUser );
+
+                my ( $ret, $msg ) = $role_object->Load($role);
+                push @errors, $CurrentUser->loc("Could not load object for [_1]", $role) unless $ret;
+                RT::Logger->error("Unable to load custom role $role: $msg") unless $ret;
+                next unless $role_object->Id;
+
+                $role_arg = 'RT::CustomRole-' . $role_object->Id;
+
+                $role_values = $args{Ticket}->RoleGroup( $role_object->GroupType );
+                RT::Logger->error("Unable to load role group for " . $role_object->GroupType)
+                    unless $role_values;
+            }
+
+            my @role_values;
+            if ( ref $role_values eq 'RT::Group' ) {
+                push @role_values, $role_values->MemberEmailAddresses
+                    if $role_values->MemberEmailAddresses;
+            }
+            push @role_values, $ARGSRef->{$role_arg} if $ARGSRef->{$role_arg};
+
+            if ( not scalar @role_values ) {
+                push @errors, $CurrentUser->loc("[_1] is required when changing [_2] to [_3]",
+                    $role,
+                    $CurrentUser->loc($transition),
+                    $CurrentUser->loc( $args{'To'} )
+                );
+                next;
+            }
+        }
     }
 
     return \@errors unless @$cfs;
