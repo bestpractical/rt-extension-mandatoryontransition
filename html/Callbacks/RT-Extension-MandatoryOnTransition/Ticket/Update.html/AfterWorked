@@ -2,11 +2,11 @@
 $Ticket
 </%args>
 <%init>
-my ($core, $cfs) = RT::Extension::MandatoryOnTransition->RequiredFields(
+my ($core, $cfs, $roles) = RT::Extension::MandatoryOnTransition->RequiredFields(
     Ticket  => $Ticket,
     To      => $ARGS{'Status'} || $ARGS{'DefaultStatus'},
 );
-return unless @$cfs;
+return unless @$cfs or @$roles;
 
 my $comp = '/Elements/EditCustomFields';
 my %obj_args = ( Object => $Ticket );
@@ -17,11 +17,47 @@ if (!$m->comp_exists('/Elements/EditCustomFields')) {
     %obj_args = ( TicketObj => $Ticket );
 }
 
+my (@roles, %crs);
+foreach my $role (@{$roles}) {
+    my $role_group = RT::Group->new($session{CurrentUser});
+    if ( $role =~ s/^CustomRole\.//i ) {
+        my $role_object = RT::CustomRole->new($session{CurrentUser});
+        my ($ret, $msg) = $role_object->Load($role);
+        RT::Logger->error("Unable to load custom role $role: $msg") unless $ret;
+
+        ($ret, $msg) = $role_group->LoadRoleGroup(
+            Object => $Ticket->QueueObj, Name => $role_object->GroupType);
+        RT::Logger->error("Unable to load role group: " . $role_object->GroupType . " $msg")
+            unless $role_group->Id;
+        $crs{$role_group->Name} = { Id => $role_object->Id, Name => $role_object->Name };
+
+        push @roles, $role_group if $role_group->Id;
+    }
+}
 </%init>
 %# 'Named' is handled by this extension in the MassageCustomFields callback
-<& $comp,
-    %ARGS,
-    %obj_args,
-    InTable     => 1,
-    Named       => $cfs,
-    &>
+% if ( @$cfs ) {
+    <& $comp,
+        %ARGS,
+        %obj_args,
+        InTable     => 1,
+        Named       => $cfs,
+        &>
+% }
+% if ( @$roles ) {
+%     foreach my $role (@roles) {
+        <tr>
+            <td class="label">Add <% $crs{$role->Name}->{Name} %>:</td>
+            <td class="entry">
+                <& /Elements/EmailInput,
+                    Name               => 'RT::CustomRole-' . $crs{$role->Name}->{Id},
+                    Autocomplete       => 1,
+                    AutocompleteNobody => 0,
+                    AutocompleteReturn => "Email",
+                    Size               => 20,
+                    Default            => $ARGS{'RT::CustomRole-' . $crs{$role->Name}->{Id}},
+                &>
+            </td>
+        </tr>
+%     }
+% }
