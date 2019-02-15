@@ -257,18 +257,16 @@ pair to %CORE_FOR_UPDATE and/or %CORE_FOR_CREATE.
 
 =cut
 
-our @CORE_SUPPORTED  = qw(Content TimeWorked TimeTaken Owner);
-our @CORE_TICKET     = qw(TimeWorked Owner);
+our @CORE_SUPPORTED  = qw(Content TimeWorked TimeTaken);
+our @CORE_TICKET     = qw(TimeWorked);
 our %CORE_FOR_UPDATE = (
     TimeWorked  => 'UpdateTimeWorked',
     TimeTaken   => 'UpdateTimeWorked',
     Content     => 'UpdateContent',
-    Owner       => 'Owner',
 );
 our %CORE_FOR_CREATE = (
     TimeWorked  => 'TimeWorked',
     Content     => 'Content',
-    Owner       => 'Owner',
 );
 
 =head2 Methods
@@ -342,7 +340,7 @@ sub RequiredFields {
     my @cfs  =  map { /^CF\.(.+)$/i; $1; }
                grep { /^CF\./i } @$required;
     my @roles = map { /^(:?[CustomRole\.]?.+)$/i; $1; }
-               grep { /^CustomRole\./i } @$required;
+               grep { /^CustomRole\.|^AdminCc|^Cc|^Requestor|^Owner/i } @$required;
 
     # Pull out any must_be or must_not_be rules
     my %cf_must_values = ();
@@ -460,36 +458,6 @@ sub CheckMandatoryFields {
             : $CORE_FOR_CREATE{$field};
         next unless $arg;
 
-        if ($field eq 'Owner') {
-            my $value;
-
-            # There are 2 Owner fields on Jumbo page, copied the same handling from it.
-            if (ref $ARGSRef->{$arg}) {
-                foreach my $owner (@{$ARGSRef->{$arg}}) {
-                    if (defined($owner) && $owner =~ /\D/) {
-                        $value = $owner unless ($args{'Ticket'}->OwnerObj->Name eq $owner);
-                    }
-                    elsif (length $owner) {
-                        $value = $owner unless ($args{'Ticket'}->OwnerObj->id == $owner);
-                    }
-                }
-            }
-            else {
-                $value = $ARGSRef->{$arg};
-            }
-
-            if (($value || $args{'Ticket'}->$field()) == $RT::Nobody->id) {
-                push @errors,
-                  $CurrentUser->loc(
-                    "[_1] is required when changing [_2] to [_3]",
-                    $field,
-                    $CurrentUser->loc($transition),
-                    $CurrentUser->loc($field_label{$transition})
-                  );
-                next;
-            }
-        }
-
         next if defined $ARGSRef->{$arg} and length $ARGSRef->{$arg};
 
         # Do we have a value currently?
@@ -511,6 +479,8 @@ sub CheckMandatoryFields {
             my $role_object;
             my @role_values;
 
+            my $value;
+
             if ( $role =~ s/^CustomRole\.//i ) {
                 $role_object = RT::CustomRole->new( $args{Ticket}->CurrentUser );
 
@@ -526,6 +496,8 @@ sub CheckMandatoryFields {
                 # No need to load current value for single-member custom roles
                 # as new passed value will override current one
                 if ( !$role_object->SingleValue ) {
+
+                    $role_arg = "Add$role_arg";
                     $role_values = $args{Ticket}->RoleGroup( $role_object->GroupType );
                     if ( $role_values ) {
                         push @role_values, grep { $_->id != $RT::Nobody->id } @{ $role_values->UserMembersObj->ItemsArrayRef };
@@ -536,31 +508,65 @@ sub CheckMandatoryFields {
                 }
             }
             else {
-                next;
-            }
+                if ( $role eq 'Owner' ) {
 
-            if ( my $value = $ARGSRef->{$role_arg} ) {
-
-                # RT can automatically create users with email addresses.
-                if ( $value =~ /@/ ) {
-                    push @role_values, $value;
+                    # There are 2 Owner fields on Jumbo page, copied the same handling from it.
+                    if ( ref $ARGSRef->{$role} ) {
+                        foreach my $owner ( @{ $ARGSRef->{$role} } ) {
+                            if ( defined($owner) && $owner =~ /\D/ ) {
+                                $value = $owner unless ( $args{'Ticket'}->OwnerObj->Name eq $owner );
+                            }
+                            elsif ( length $owner ) {
+                                $value = $owner unless ( $args{'Ticket'}->OwnerObj->id == $owner );
+                            }
+                        }
+                    }
+                    else {
+                        $value = $ARGSRef->{$role};
+                    }
                 }
                 else {
-                    my $user = RT::User->new( RT->SystemUser );
-                    $user->Load($value);
+                    $role_arg = "Add$role";
+                }
 
-                    if ( $user->id ) {
-                        if ( $role_object->SingleValue ) {
-                            if ( $user->id == $RT::Nobody->id ) {
-                                undef @role_values if @role_values;
-                            }
-                            else {
-                                push @role_values, $user;
-                            }
+                $role_values = RT::Group->new( $args{Ticket}->CurrentUser );
+                my ( $ret, $msg ) = $role_values->LoadRoleGroup(
+                    Object => $args{Ticket},
+                    Name   => $role,
+                );
+                if ( $ret ) {
+                    push @role_values, grep { $_->id != $RT::Nobody->id } @{ $role_values->UserMembersObj->ItemsArrayRef };
+                }
+                else {
+                    push @errors, $CurrentUser->loc("Failed to load role $role for ticket");
+                }
+            }
+
+            $value = $ARGSRef->{$role_arg} unless $role eq 'Owner';
+
+            if ($value) {
+
+                my $user = RT::User->new( RT->SystemUser );
+                $user->Load($value);
+                $user->LoadByEmail($value) unless $user->id;
+
+                if ( $user->id ) {
+                    if ( $role eq 'Owner' || ( $role_object && $role_object->SingleValue ) ) {
+                        if ( $user->id == $RT::Nobody->id ) {
+                            undef @role_values if @role_values;
                         }
                         else {
-                            push @role_values, $user unless $user->id == $RT::Nobody->id;
+                            @role_values = $user;
                         }
+                    }
+                    else {
+                        push @role_values, $user unless $user->id == $RT::Nobody->id;
+                    }
+                }
+                else {
+                    # RT can automatically create users with email addresses.
+                    if ( $value =~ /@/ ) {
+                        push @role_values, $value;
                     }
                     else {
                         push @errors, $CurrentUser->loc( "Could not load user: [_1]", $value );
@@ -568,7 +574,7 @@ sub CheckMandatoryFields {
                 }
             }
             else {
-                if ( $role_object->SingleValue ) {
+                if ( $role_object && $role_object->SingleValue ) {
                     undef @role_values if @role_values;
                 }
                 delete $ARGSRef->{$role_arg};
