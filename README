@@ -216,8 +216,12 @@ IMPLEMENTATION DETAILS
    RequiredFields
     Returns three array refs of required fields for the described status
     transition. The first is core fields, the second is CF names, the third
-    is roles. Returns empty array refs on error or if nothing is required. A
-    forth parameter is a hashref of must-have values for custom fields.
+    is roles. Returns empty array refs on error or if nothing is required.
+
+    A fourth returned parameter is a hashref of must-have values for custom
+    fields.
+
+    The fifth parameter is a hashref of groups a role member must be in.
 
     Takes a paramhash with the keys Ticket, Queue, From, and To. Ticket
     should be an object. Queue should be a name. From and To should be
