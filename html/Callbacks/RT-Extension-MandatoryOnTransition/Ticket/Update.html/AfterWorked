@@ -32,6 +32,11 @@ foreach my $role (@{$roles}) {
         $crs{$role_group->Name} = { Id => $role_object->Id, Name => $role_object->Name };
 
         push @roles, $role_group if $role_group->Id;
+    } else {
+        # Handle core roles like Requestor, Cc, AdminCc
+        my ($ret, $msg) = $role_group->LoadRoleGroup(Object => $Ticket, Name => $role);
+        RT::Logger->error("Unable to load role $role: $msg") unless $ret;
+        push @roles, $role_group if $ret;
     }
 }
 </%init>
@@ -46,16 +51,17 @@ foreach my $role (@{$roles}) {
 % }
 % if ( @$roles ) {
 %     foreach my $role (@roles) {
+%     next if $role->Name eq 'Owner';
         <tr>
-            <td class="label">Add <% $crs{$role->Name}->{Name} %>:</td>
+            <td class="label">Add <% $role->Name =~ /CustomRole/ ? $crs{$role->Name}->{Name} : $role->Name %>:</td>
             <td class="entry">
                 <& /Elements/EmailInput,
-                    Name               => 'RT::CustomRole-' . $crs{$role->Name}->{Id},
+                    Name => grep ($role->Name eq $_, qw/Requestor AdminCc Cc/) ? $role->Name : 'RT::CustomRole-' . $crs{$role->Name}->{Id},
                     Autocomplete       => 1,
                     AutocompleteNobody => 0,
                     AutocompleteReturn => "Email",
                     Size               => 20,
-                    Default            => $ARGS{'RT::CustomRole-' . $crs{$role->Name}->{Id}},
+                    Default            => grep ($role->Name eq $_, qw/Requestor AdminCc Cc/) ? $ARGS{$role->Name} : $ARGS{'RT::CustomRole-' . $crs{$role->Name}->{Id}},
                 &>
             </td>
         </tr>

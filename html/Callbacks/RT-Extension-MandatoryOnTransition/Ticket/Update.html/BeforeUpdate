@@ -15,5 +15,22 @@ if (@$errors_ref) {
     RT->Logger->debug("Preventing update because of missing mandatory fields");
     $$skip_update = 1;
     push @$results, @$errors_ref;
+} else {
+    # The update page does not look for core roles, this allows us to
+    # set them if they are present. We only want to set them if no errors
+    # were reported.
+
+    my $role_group = RT::Group->new($session{CurrentUser});
+    foreach my $role (qw/Requestor AdminCc Cc/) {
+        next unless $ARGSRef->{$role};
+
+        if ( $TicketObj->IsWatcher(Type => $role, Email => $ARGSRef->{$role}) ) {
+            RT::Logger->debug($ARGSRef->{$role} . " is already a watcher for role: $role");
+        } else {
+            my ($ret, $msg) = $TicketObj->AddWatcher(Type => $role, Email => $ARGSRef->{$role});
+            RT::Logger->error("Unable to add " . $ARGSRef->{$role} . " to role $role: $msg")
+                unless $ret;
+        }
+    }
 }
 </%init>
