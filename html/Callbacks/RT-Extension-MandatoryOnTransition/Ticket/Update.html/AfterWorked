@@ -28,6 +28,9 @@ foreach my $role (@{$roles}) {
             next;
         }
 
+        # Update page already contains single member role groups
+        next if $role_object->SingleValue;
+
         push @roles, $role_object;
     }
 }
