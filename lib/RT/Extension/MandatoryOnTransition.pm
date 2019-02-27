@@ -147,7 +147,6 @@ Category selection before resolving tickets in every other queue.
     Set( %MandatoryOnTransition,
         Helpdesk => {
             '* -> resolved'      => ['TimeWorked', 'CF.Resolution', 'CustomRole.Analyst'],
-            'CustomRole.Analyst' => {transition => '* -> open', group => 'Engineering'},
         },
         '*' => {
             '* -> resolved' => ['CF.Category'],
@@ -320,12 +319,12 @@ sub RequiredFields {
 
     my ($from_queue, $to_queue) = ($args{Queue}, $args{ToQueue} || $args{Queue});
 
-    return ([], []) unless ($from and $to) or ($from_queue and $to_queue );
+    return ([], [], []) unless ($from and $to) or ($from_queue and $to_queue );
 
     my %config = ();
     %config = $self->Config($args{Queue});
 
-    return ([], []) unless %config;
+    return ([], [], []) unless %config;
 
    $to ||= '';
    $from ||= '';
@@ -507,21 +506,26 @@ sub CheckMandatoryFields {
     if (@$roles and $args{'To'}) {
         foreach my $role (@$roles) {
             my $role_values;
-            my ( $role_arg, $role_full ) = ( $role, $role );
+            my $role_arg = $role;
 
             if ( $role =~ s/^CustomRole\.//i ) {
                 my $role_object = RT::CustomRole->new( $args{Ticket}->CurrentUser );
 
                 my ( $ret, $msg ) = $role_object->Load($role);
                 push @errors, $CurrentUser->loc("Could not load object for [_1]", $role) unless $ret;
-                RT::Logger->error("Unable to load custom role $role: $msg") unless $ret;
-                next unless $role_object->Id;
+                unless ( $ret ) {
+                    RT::Logger->error("Unable to load custom role $role: $msg");
+                    next;
+                }
 
-                $role_arg = 'RT::CustomRole-' . $role_object->Id;
+                $role_arg = $role_object->GroupType;
 
                 $role_values = $args{Ticket}->RoleGroup( $role_object->GroupType );
                 RT::Logger->error("Unable to load role group for " . $role_object->GroupType)
                     unless $role_values;
+            }
+            else {
+                next;
             }
 
             my @role_values;

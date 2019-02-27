@@ -23,15 +23,12 @@ foreach my $role (@{$roles}) {
     if ( $role =~ s/^CustomRole\.//i ) {
         my $role_object = RT::CustomRole->new($session{CurrentUser});
         my ($ret, $msg) = $role_object->Load($role);
-        RT::Logger->error("Unable to load custom role $role: $msg") unless $ret;
+        unless ( $ret ) {
+            RT::Logger->error("Unable to load custom role $role: $msg");
+            next;
+        }
 
-        ($ret, $msg) = $role_group->LoadRoleGroup(
-            Object => $Ticket->QueueObj, Name => $role_object->GroupType);
-        RT::Logger->error("Unable to load role group: " . $role_object->GroupType . " $msg")
-            unless $role_group->Id;
-        $crs{$role_group->Name} = { Id => $role_object->Id, Name => $role_object->Name };
-
-        push @roles, $role_group if $role_group->Id;
+        push @roles, $role_object;
     }
 }
 </%init>
@@ -47,15 +44,15 @@ foreach my $role (@{$roles}) {
 % if ( @$roles ) {
 %     foreach my $role (@roles) {
         <tr>
-            <td class="label">Add <% $crs{$role->Name}->{Name} %>:</td>
+            <td class="label">Add <% $role->Name %>:</td>
             <td class="entry">
                 <& /Elements/EmailInput,
-                    Name               => 'RT::CustomRole-' . $crs{$role->Name}->{Id},
+                    Name               => $role->GroupType,
                     Autocomplete       => 1,
                     AutocompleteNobody => 0,
                     AutocompleteReturn => "Email",
                     Size               => 20,
-                    Default            => $ARGS{'RT::CustomRole-' . $crs{$role->Name}->{Id}},
+                    Default            => $ARGS{$role->GroupType},
                 &>
             </td>
         </tr>
