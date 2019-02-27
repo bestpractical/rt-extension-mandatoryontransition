@@ -47,7 +47,7 @@ foreach my $role (@{$roles}) {
 % if ( @$roles ) {
 %     foreach my $role (@roles) {
         <tr>
-            <td class="label">Add <% $role->Name %>:</td>
+            <td class="label"><&|/l, loc($role->Name) &>Add [_1]</&>:</td>
             <td class="entry">
                 <& /Elements/EmailInput,
                     Name               => $role->GroupType,
