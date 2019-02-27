@@ -508,8 +508,11 @@ sub CheckMandatoryFields {
             my $role_values;
             my $role_arg = $role;
 
+            my $role_object;
+            my @role_values;
+
             if ( $role =~ s/^CustomRole\.//i ) {
-                my $role_object = RT::CustomRole->new( $args{Ticket}->CurrentUser );
+                $role_object = RT::CustomRole->new( $args{Ticket}->CurrentUser );
 
                 my ( $ret, $msg ) = $role_object->Load($role);
                 push @errors, $CurrentUser->loc("Could not load object for [_1]", $role) unless $ret;
@@ -520,19 +523,56 @@ sub CheckMandatoryFields {
 
                 $role_arg = $role_object->GroupType;
 
-                $role_values = $args{Ticket}->RoleGroup( $role_object->GroupType );
-                RT::Logger->error("Unable to load role group for " . $role_object->GroupType)
-                    unless $role_values;
+                # No need to load current value for single-member custom roles
+                # as new passed value will override current one
+                if ( !$role_object->SingleValue ) {
+                    $role_values = $args{Ticket}->RoleGroup( $role_object->GroupType );
+                    if ( $role_values ) {
+                        push @role_values, grep { $_->id != $RT::Nobody->id } @{ $role_values->UserMembersObj->ItemsArrayRef };
+                    }
+                    else {
+                        RT::Logger->error( "Unable to load role group for " . $role_object->GroupType );
+                    }
+                }
             }
             else {
                 next;
             }
 
-            my @role_values;
-            if ( ref $role_values eq 'RT::Group' ) {
-                push @role_values, grep { $_->id != $RT::Nobody->id } @{ $role_values->UserMembersObj->ItemsArrayRef };
+            if ( my $value = $ARGSRef->{$role_arg} ) {
+
+                # RT can automatically create users with email addresses.
+                if ( $value =~ /@/ ) {
+                    push @role_values, $value;
+                }
+                else {
+                    my $user = RT::User->new( RT->SystemUser );
+                    $user->Load($value);
+
+                    if ( $user->id ) {
+                        if ( $role_object->SingleValue ) {
+                            if ( $user->id == $RT::Nobody->id ) {
+                                undef @role_values if @role_values;
+                            }
+                            else {
+                                push @role_values, $user;
+                            }
+                        }
+                        else {
+                            push @role_values, $user unless $user->id == $RT::Nobody->id;
+                        }
+                    }
+                    else {
+                        push @errors, $CurrentUser->loc( "Could not load user: [_1]", $value );
+                    }
+                }
             }
-            push @role_values, $ARGSRef->{$role_arg} if $ARGSRef->{$role_arg};
+            else {
+                if ( $role_object->SingleValue ) {
+                    undef @role_values if @role_values;
+                }
+                delete $ARGSRef->{$role_arg};
+            }
 
             if ( not scalar @role_values ) {
                 push @errors, $CurrentUser->loc("[_1] is required when changing [_2] to [_3]",
