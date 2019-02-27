@@ -530,8 +530,7 @@ sub CheckMandatoryFields {
 
             my @role_values;
             if ( ref $role_values eq 'RT::Group' ) {
-                push @role_values, $role_values->MemberEmailAddresses
-                    if $role_values->MemberEmailAddresses;
+                push @role_values, grep { $_->id != $RT::Nobody->id } @{ $role_values->UserMembersObj->ItemsArrayRef };
             }
             push @role_values, $ARGSRef->{$role_arg} if $ARGSRef->{$role_arg};
 
