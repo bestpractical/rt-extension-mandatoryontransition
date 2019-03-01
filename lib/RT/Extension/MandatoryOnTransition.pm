@@ -637,6 +637,48 @@ sub CheckMandatoryFields {
                 delete $ARGSRef->{$role_arg};
             }
 
+            # Handle multi-members roles on Jumbo page
+            my @values;
+
+            if ( $role =~ /^(AdminCc|Cc|Requestors)$/i || ( $role_object && !$role_object->SingleValue ) ) {
+                my $type = $role_object ? $role_object->GroupType : $role;
+
+                for my $arg ( keys %$ARGSRef ) {
+                    if ( $arg =~ /^WatcherTypeEmail(\d+)/ ) {
+                        my $num = $1;
+                        next unless $ARGSRef->{$arg} eq $type;
+                        my $address = $ARGSRef->{ 'WatcherAddressEmail' . $num };
+                        next unless $address;
+
+                        push @values, $address;
+                    }
+                    elsif ( $arg =~ /^Ticket-DeleteWatcher-Type-$type-Principal-(\d+)$/ ) {
+                        my $del_id = $1;
+                        @role_values = grep { ref $_ ? $_->id != $del_id : $_ } @role_values;
+                    }
+                }
+            }
+
+            for my $value (@values) {
+                my $user = RT::User->new( RT->SystemUser );
+                $user->Load($value);
+                $user->LoadByEmail($value) unless $user->id;
+
+                if ( $user->id ) {
+                    push @role_values, $user unless $user->id == $RT::Nobody->id;
+                }
+                else {
+                    # RT can automatically create users with email addresses.
+                    if ( $value =~ /@/ ) {
+                        push @role_values, $value;
+                    }
+                    else {
+                        push @errors, $CurrentUser->loc( "Could not load user: [_1]", $value );
+                    }
+                }
+            }
+
+
             # Check for mandatory group configuration, supports multiple groups where only
             # one true case needs to be found.
             if ( $role_group_values->{$role}->{group} ) {
