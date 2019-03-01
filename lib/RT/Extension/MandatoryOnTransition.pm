@@ -387,6 +387,16 @@ sub RequiredFields {
 
     my %role_group_values;
     my $cr = RT::CustomRole->new(RT->SystemUser);
+    my $queue_id;
+    if ( $args{Ticket} ) {
+        $queue_id = $args{Ticket}->Queue;
+    }
+    else {
+        my $queue = RT::Queue->new( RT->SystemUser );
+        $queue->Load($args{Queue});
+        $queue_id = $queue->id;
+    }
+
     foreach my $role (@roles){
         if ( $role =~ /^CustomRole\.(.*)/i ) {
             my $role_name = $1;
@@ -395,7 +405,7 @@ sub RequiredFields {
                 RT::Logger->error("Could not load Custom role $role_name: $msg");
                 @roles = grep { $_ ne $role } @roles;
                 next;
-            } elsif ( not $cr->IsAdded($args{Ticket}->QueueObj->Id) or $cr->Disabled ) {
+            } elsif ( not $cr->IsAdded($queue_id) or $cr->Disabled ) {
                 RT::Logger->error("Custom role $role_name is not applied to: " . $args{Ticket}->QueueObj->Name );
                 @roles = grep { $_ ne $role } @roles;
                 next;
@@ -539,7 +549,7 @@ sub CheckMandatoryFields {
 
             if ( $role =~ /^CustomRole\.(.+)/ ) {
                 $role_name = $1;
-                $role_object = RT::CustomRole->new( $args{Ticket}->CurrentUser );
+                $role_object = RT::CustomRole->new( $CurrentUser );
 
                 my ( $ret, $msg ) = $role_object->Load($role_name);
                 push @errors, $CurrentUser->loc("Could not load object for [_1]", $role_name) unless $ret;
@@ -552,7 +562,7 @@ sub CheckMandatoryFields {
 
                 # No need to load current value for single-member custom roles
                 # as new passed value will override current one
-                if ( !$role_object->SingleValue ) {
+                if ( !$role_object->SingleValue && $args{Ticket} ) {
 
                     $role_arg = "Add$role_arg";
                     $role_values = $args{Ticket}->RoleGroup( $role_object->GroupType );
@@ -586,16 +596,19 @@ sub CheckMandatoryFields {
                     $role_arg = "Add$role";
                 }
 
-                $role_values = RT::Group->new( $args{Ticket}->CurrentUser );
-                my ( $ret, $msg ) = $role_values->LoadRoleGroup(
-                    Object => $args{Ticket},
-                    Name   => $role,
-                );
-                if ( $ret ) {
-                    push @role_values, grep { $_->id != $RT::Nobody->id } @{ $role_values->UserMembersObj->ItemsArrayRef };
-                }
-                else {
-                    push @errors, $CurrentUser->loc("Failed to load role $role for ticket");
+                if ( $args{Ticket} ) {
+                    $role_values = RT::Group->new( $args{Ticket}->CurrentUser );
+                    my ( $ret, $msg ) = $role_values->LoadRoleGroup(
+                        Object => $args{Ticket},
+                        Name   => $role,
+                    );
+                    if ($ret) {
+                        push @role_values,
+                          grep { $_->id != $RT::Nobody->id } @{ $role_values->UserMembersObj->ItemsArrayRef };
+                    }
+                    else {
+                        push @errors, $CurrentUser->loc("Failed to load role $role for ticket");
+                    }
                 }
             }
 
@@ -674,6 +687,31 @@ sub CheckMandatoryFields {
                     }
                     else {
                         push @errors, $CurrentUser->loc( "Could not load user: [_1]", $value );
+                    }
+                }
+            }
+
+            # Handle multi-members roles on Create page
+            if ( $role =~ /^(AdminCc|Cc|Requestors)$/i || ( $role_object && !$role_object->SingleValue ) ) {
+                my $type = $role_object ? $role_object->GroupType : $role;
+
+                if ( $ARGSRef->{$role} ) {
+                    for my $value ( RT::EmailParser->ParseEmailAddress( $ARGSRef->{$role} ) ) {
+                        my $user = RT::User->new( RT->SystemUser );
+                        $user->LoadByEmail($value);
+
+                        if ( $user->id ) {
+                            push @role_values, $user unless $user->id == $RT::Nobody->id;
+                        }
+                        else {
+                            # RT can automatically create users with email addresses.
+                            if ( $value =~ /@/ ) {
+                                push @role_values, $value;
+                            }
+                            else {
+                                push @errors, $CurrentUser->loc( "Could not load user: [_1]", $value );
+                            }
+                        }
                     }
                 }
             }
