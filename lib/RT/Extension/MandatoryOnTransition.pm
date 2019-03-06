@@ -386,7 +386,6 @@ sub RequiredFields {
     }
 
     my %role_group_values;
-    my $cr = RT::CustomRole->new(RT->SystemUser);
     my $queue_id;
     if ( $args{Ticket} ) {
         $queue_id = $args{Ticket}->Queue;
@@ -399,6 +398,7 @@ sub RequiredFields {
 
     foreach my $role (@roles){
         if ( $role =~ /^CustomRole\.(.*)/i ) {
+            my $cr = RT::CustomRole->new(RT->SystemUser);
             my $role_name = $1;
             my ($ret, $msg) = $cr->Load($role_name);
             if ( not $cr and $cr->Id ) {
