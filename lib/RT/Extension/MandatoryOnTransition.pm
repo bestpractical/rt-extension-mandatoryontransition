@@ -360,7 +360,7 @@ sub RequiredFields {
 
     my %core_supported = map { $_ => 1 } @CORE_SUPPORTED;
 
-    my @core = grep { !/^CF\./i && $core_supported{$_} } @$required;
+    my @core = grep { $core_supported{$_} } @$required;
     my @cfs  =  map { /^CF\.(.+)$/i; $1; }
                grep { /^CF\./i } @$required;
     my @roles = map { /^(:?[CustomRole\.]?.+)$/i; $1; }
