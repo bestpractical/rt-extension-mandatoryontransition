@@ -341,7 +341,7 @@ sub RequiredFields {
 
     my ($from_queue, $to_queue) = ($args{Queue}, $args{ToQueue} || $args{Queue});
 
-    return ([], [], []) unless ($from and $to) or ($from_queue and $to_queue );
+    return ([], [], []) unless ($from and $to and $from ne $to) or ($from_queue and $to_queue and $from_queue ne $to_queue);
 
     my %config = ();
     %config = $self->Config($args{Queue});
