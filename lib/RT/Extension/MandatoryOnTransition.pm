@@ -523,7 +523,24 @@ sub CheckMandatoryFields {
             : $CORE_FOR_CREATE{$field};
         next unless $arg;
 
-        next if defined $ARGSRef->{$arg} and length $ARGSRef->{$arg};
+        # Process Content the same way it will be processed by RT on update
+        # Which means cleaning out any possible signature
+        if ( $field eq 'Content' && defined $ARGSRef->{$arg} && length $ARGSRef->{$arg} ) {
+
+            # Create = ContentType, Update = UpdateContentType,
+            # So use $arg to find the ARG for ContentType
+            my $content_type_arg = $arg . 'Type';
+            my $sig_removed = RT::Interface::Web::StripContent(
+                Content        => $ARGSRef->{$arg},
+                ContentType    => $ARGSRef->{$content_type_arg},
+                StripSignature => $ARGSRef->{SkipSignatureOnly} || 1,
+                CurrentUser    => $CurrentUser,
+            );
+            next if defined $sig_removed and length $sig_removed;
+        }
+        else {
+            next if defined $ARGSRef->{$arg} and length $ARGSRef->{$arg};
+        }
 
         # Do we have a value currently?
         # In Create the ticket hasn't been created yet.
