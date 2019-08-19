@@ -2,7 +2,7 @@ use strict;
 use warnings;
 package RT::Extension::MandatoryOnTransition;
 
-our $VERSION = '0.18';
+our $VERSION = '0.19';
 
 =head1 NAME
 
