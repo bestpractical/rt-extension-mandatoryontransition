@@ -624,7 +624,7 @@ sub CheckMandatoryFields {
                           grep { $_->id != $RT::Nobody->id } @{ $role_values->UserMembersObj->ItemsArrayRef };
                     }
                     else {
-                        push @errors, $CurrentUser->loc("Failed to load role $role for ticket");
+                        push @errors, $CurrentUser->loc("Failed to load role [_1] for ticket", $role);
                     }
                 }
             }
