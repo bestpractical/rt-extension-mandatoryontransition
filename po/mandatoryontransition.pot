@@ -1,6 +1,52 @@
-#. ($cf->Name, $ARGSRef->{Status})
-#. ($label, $ARGSRef->{Status})
-#: lib/RT/Extension/MandatoryOnTransition.pm:363 lib/RT/Extension/MandatoryOnTransition.pm:411
-msgid "%1 is required when changing Status to %2"
+#. ($cf->Name, $CurrentUser->loc($transition), $CurrentUser->loc($field_label{$transition}))
+#. ($role_name,                    $CurrentUser->loc($transition),                    $CurrentUser->loc( $args{'To'} ))
+#. ($label, $CurrentUser->loc($transition),  $CurrentUser->loc($field_label{$transition}))
+#: lib/RT/Extension/MandatoryOnTransition.pm:553 lib/RT/Extension/MandatoryOnTransition.pm:774 lib/RT/Extension/MandatoryOnTransition.pm:902
+msgid "%1 is required when changing %2 to %3"
+msgstr ""
+
+#. ($cf->Name, $CurrentUser->loc($transition),  $CurrentUser->loc($field_label{$transition}), $valid_values)
+#: lib/RT/Extension/MandatoryOnTransition.pm:868
+msgid "%1 must be %4 when changing %2 to %3"
+msgstr ""
+
+#. ($cf->Name, $CurrentUser->loc($transition), $CurrentUser->loc($field_label{$transition}), $valid_values)
+#: lib/RT/Extension/MandatoryOnTransition.pm:863
+msgid "%1 must be one of: %4 when changing %2 to %3"
+msgstr ""
+
+#. ($cf->Name, $CurrentUser->loc($transition),$CurrentUser->loc($field_label{$transition}), $valid_values)
+#: lib/RT/Extension/MandatoryOnTransition.pm:887
+msgid "%1 must not be %4 when changing %2 to %3"
+msgstr ""
+
+#. ($cf->Name, $CurrentUser->loc($transition), $CurrentUser->loc($field_label{$transition}), $valid_values)
+#: lib/RT/Extension/MandatoryOnTransition.pm:882
+msgid "%1 must not be one of: %4 when changing %2 to %3"
+msgstr ""
+
+#. ($roles, $role_name)
+#: lib/RT/Extension/MandatoryOnTransition.pm:763
+msgid "A member of group %1 is required for role: %2"
+msgstr ""
+
+#. ($role->Name)
+#. (loc($role->Name))
+#: html/Callbacks/RT-Extension-MandatoryOnTransition/Ticket/Elements/EditBasics/MassageFields:45 html/Callbacks/RT-Extension-MandatoryOnTransition/Ticket/Update.html/AfterWorked:62
+msgid "Add %1"
+msgstr ""
+
+#. ($role_name)
+#: lib/RT/Extension/MandatoryOnTransition.pm:572
+msgid "Could not load object for %1"
+msgstr ""
+
+#. ($value)
+#: lib/RT/Extension/MandatoryOnTransition.pm:659 lib/RT/Extension/MandatoryOnTransition.pm:706 lib/RT/Extension/MandatoryOnTransition.pm:729
+msgid "Could not load user: %1"
+msgstr ""
+
+#: lib/RT/Extension/MandatoryOnTransition.pm:627
+msgid "Failed to load role $role for ticket"
 msgstr ""
 
