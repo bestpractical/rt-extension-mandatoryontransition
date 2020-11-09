@@ -46,7 +46,8 @@ msgstr ""
 msgid "Could not load user: %1"
 msgstr ""
 
+#. ($role)
 #: lib/RT/Extension/MandatoryOnTransition.pm:627
-msgid "Failed to load role $role for ticket"
+msgid "Failed to load role %1 for ticket"
 msgstr ""
 

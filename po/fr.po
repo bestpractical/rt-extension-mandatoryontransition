@@ -54,7 +54,8 @@ msgstr "Impossible de charger l’objet pour %1"
 msgid "Could not load user: %1"
 msgstr "Impossible de charger l’utilisateur : %1"
 
+#. ($role)
 #: lib/RT/Extension/MandatoryOnTransition.pm:627
-msgid "Failed to load role $role for ticket"
-msgstr "Impossible de charger le rôle $role"
+msgid "Failed to load role %1 for ticket"
+msgstr "Impossible de charger le rôle « %1 »"
 
