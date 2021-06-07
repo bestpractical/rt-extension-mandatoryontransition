@@ -818,7 +818,7 @@ sub CheckMandatoryFields {
             $submitted = $submitted ? $submitted->{(sort keys %$submitted)[0]} : {};
 
             my @values;
-            for my $argtype (qw/Values Value/) {
+            for my $argtype (qw/Values Value Upload/) {
                 next if @values;
                 @values = HTML::Mason::Commands::_NormalizeObjectCustomFieldValue(
                     CustomField => $cf,
@@ -830,7 +830,12 @@ sub CheckMandatoryFields {
             ($value) = @values;
         }
         else {
-            my $arg   = "Object-RT::Ticket-".$TicketId."-CustomField-".$cf->Id."-Value";
+            my $arg;
+            if ( $cf->Type =~ m/^(Binary|Image)$/ ) {
+                $arg   = "Object-RT::Ticket-".$TicketId."-CustomField-".$cf->Id."-Upload";
+            } else {
+                $arg   = "Object-RT::Ticket-".$TicketId."-CustomField-".$cf->Id."-Value";
+            }
             $value = ($ARGSRef->{"${arg}s-Magic"} and exists $ARGSRef->{"${arg}s"}) ? $ARGSRef->{$arg . "s"} : $ARGSRef->{$arg};
             ($value) = grep length, map {
                 s/\r+\n/\n/g;
