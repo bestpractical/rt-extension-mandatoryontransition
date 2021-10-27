@@ -841,6 +841,10 @@ sub CheckMandatoryFields {
                 grep defined, $value;
         }
 
+        if ( $cf->can('CustomFieldValueIsEmpty') && $cf->CustomFieldValueIsEmpty( Field => $cf, Value => $value ) ) {
+            undef $value;
+        }
+
         # Check for specific values
         if ( exists $must_values->{$cf->Name} ){
             my $cf_value = $value;
