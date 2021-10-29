@@ -2,7 +2,7 @@ use strict;
 use warnings;
 package RT::Extension::MandatoryOnTransition;
 
-our $VERSION = '0.20';
+our $VERSION = '0.21';
 
 =head1 NAME
 
@@ -10,9 +10,10 @@ RT-Extension-MandatoryOnTransition - Require core fields and ticket custom field
 
 =head1 RT VERSION
 
-Works with RT 4.0, 4.2, 4.4, 5.0
+Works with RT 4.4, 5.0
 
-See below for some restrictions on RT 4.0.
+RT 4.0 and 4.2 are now end-of-life, so compatibility with
+newer versions of this extension is unknown.
 
 =head1 DESCRIPTION
 
