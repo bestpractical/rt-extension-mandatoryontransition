@@ -15,6 +15,8 @@ Works with RT 4.4, 5.0
 RT 4.0 and 4.2 are now end-of-life, so compatibility with
 newer versions of this extension is unknown.
 
+Also works with RTIR 5.0.3 and later
+
 =head1 DESCRIPTION
 
 This RT extension enforces that certain fields have values before tickets are
@@ -114,6 +116,12 @@ or add C<RT::Extension::MandatoryOnTransition> to your existing C<@Plugins> line
 =item Restart your webserver
 
 =back
+
+If running with RTIR, the C<Plugin> line for RTIR must come first in your
+configuration as shown below.
+
+    Plugin('RT::IR');
+    Plugin('RT::Extension::MandatoryOnTransition');
 
 =head1 CONFIGURATION
 
