@@ -2,7 +2,7 @@ use strict;
 use warnings;
 package RT::Extension::MandatoryOnTransition;
 
-our $VERSION = '0.21';
+our $VERSION = '0.22';
 
 =head1 NAME
 
@@ -991,7 +991,7 @@ or via the web at
 
 =head1 LICENSE AND COPYRIGHT
 
-This software is Copyright (c) 2012-2020 by Best Pracical Solutions, LLC.
+This software is Copyright (c) 2012-2022 by Best Pracical Solutions, LLC.
 
 This is free software, licensed under:
 
