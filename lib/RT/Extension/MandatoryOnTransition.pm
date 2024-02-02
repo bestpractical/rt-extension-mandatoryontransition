@@ -143,13 +143,14 @@ For example,
 
     Set( %MandatoryOnTransition,
         'MyQueue' => {
-            '__CREATE__ -> open' => [ 'CF.MyField1' ],
+            '__CREATE__ -> new' => [ 'CF.MyField1' ],
             '* -> open' => [ 'CF.MyField2', 'CF.MyField3' ],
         },
     );
 
 would require C<CF.MyField1> on ticket creation and C<CF.MyField2> and
-C<CF.MyField3> on any other transition to C<open>.
+C<CF.MyField3> on any other transition to C<open>. The C<to> status for
+CREATE rules must be a valid create status in the lifecycle.
 
 The fallback for queues without specific rules is specified with C<'*'> where
 the queue name would normally be.
