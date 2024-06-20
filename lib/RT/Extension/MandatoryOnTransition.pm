@@ -677,6 +677,16 @@ sub CheckMandatoryFields {
                     # RT can automatically create users with email addresses.
                     if ( $value =~ /@/ ) {
                         push @role_values, $value;
+                    } elsif ( $value =~ /^group:(.+)$/ ) {
+                        my $group = RT::Group->new( RT->SystemUser );
+                        my $group_name = $1;
+                        my ( $ret, $msg ) = $group->LoadUserDefinedGroup($group_name);
+                        unless ( $ret ) {
+                            push @errors, $CurrentUser->loc( "Could not load group: [_1]", $group_name );
+                        }
+                        else {
+                            push @role_values, $group;
+                        }
                     }
                     else {
                         push @errors, $CurrentUser->loc( "Could not load user: [_1]", $value );
