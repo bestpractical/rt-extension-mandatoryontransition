@@ -532,7 +532,7 @@ sub CheckMandatoryFields {
     # then set the form field name for Time Worked to 'TimeWorked' in
     # our local copy of %CORE_FOR_UPDATE
     my %CORE_FOR_UPDATE_COPY = %CORE_FOR_UPDATE;
-    if ( exists $ARGSRef->{'SubmitTicket'} && $ARGSRef->{'SubmitTicket'} eq 'Save Changes' ) {
+    if ( exists $ARGSRef->{'SubmitTicket'} && $ARGSRef->{'SubmitTicket'} eq $CurrentUser->loc('Save Changes') ) {
         $CORE_FOR_UPDATE_COPY{'TimeWorked'} = 'TimeWorked';
         $CORE_FOR_UPDATE_COPY{'TimeTaken'} = 'TimeWorked';
     }
