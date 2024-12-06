@@ -1,5 +1,14 @@
 Revision history for RT-Extension-MandatoryOnTransition
 
+0.25 2024-12-06
+ - Improve some of the mesages of the extension for better localization
+ - Add Spanish translations
+ - Add Catalan translations
+ - Special thanks to Eduardo Domínguez Vázquez for
+  contributing to this version of the extension.
+  https://rt.cpan.org/Public/Bug/Display.html?id=157525
+
+
 0.24 2024-06-20
  - Parse group values on role related validations
  - Clarify the example "to" status for __CREATE__ rules

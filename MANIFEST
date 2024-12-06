@@ -37,6 +37,8 @@ Makefile.PL
 MANIFEST			This list of files
 MANIFEST.SKIP
 META.yml
+po/ca.po
+po/es.po
 po/fr.po
 po/mandatoryontransition.pot
 README
