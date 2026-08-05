@@ -1,14 +1,61 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2016-03-17 11:51+0200\n"
+"PO-Revision-Date: 2020-11-09 16:19+0200\n"
 "Last-Translator: Emmanuel Lacour <elacour@home-dn.net>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#. ($cf->Name, $ARGSRef->{Status})
-#. ($label, $ARGSRef->{Status})
-#: lib/RT/Extension/MandatoryOnTransition.pm:363 lib/RT/Extension/MandatoryOnTransition.pm:411
+#. ($cf->Name, $CurrentUser->loc($transition), $CurrentUser->loc($field_label{$transition}))
+#. ($role_name,                    $CurrentUser->loc($transition),                    $CurrentUser->loc( $args{'To'} ))
+#. ($label, $CurrentUser->loc($transition),  $CurrentUser->loc($field_label{$transition}))
+#: lib/RT/Extension/MandatoryOnTransition.pm:553 lib/RT/Extension/MandatoryOnTransition.pm:774 lib/RT/Extension/MandatoryOnTransition.pm:902
 msgid "%1 is required when changing Status to %2"
 msgstr "%1 est obligatoire lors du passage en %2"
+
+#. ($cf->Name, $CurrentUser->loc($transition),  $CurrentUser->loc($field_label{$transition}), $valid_values)
+#: lib/RT/Extension/MandatoryOnTransition.pm:868
+msgid "%1 must be %4 when changing %2 to %3"
+msgstr "%1 doit être %4 lorsqu’on passe de %2 à %3"
+
+#. ($cf->Name, $CurrentUser->loc($transition), $CurrentUser->loc($field_label{$transition}), $valid_values)
+#: lib/RT/Extension/MandatoryOnTransition.pm:863
+msgid "%1 must be one of: %4 when changing %2 to %3"
+msgstr "%1 doit être parmi : %4 lorsqu’on passe de %2 à %3"
+
+#. ($cf->Name, $CurrentUser->loc($transition),$CurrentUser->loc($field_label{$transition}), $valid_values)
+#: lib/RT/Extension/MandatoryOnTransition.pm:887
+msgid "%1 must not be %4 when changing %2 to %3"
+msgstr "%1 ne doit pas être %4 lorsqu’on passe de %2 à %3"
+
+#. ($cf->Name, $CurrentUser->loc($transition), $CurrentUser->loc($field_label{$transition}), $valid_values)
+#: lib/RT/Extension/MandatoryOnTransition.pm:882
+msgid "%1 must not be one of: %4 when changing %2 to %3"
+msgstr "%1 ne doit pas être parmi :%4 lorsqu’on passe de %2 à %3"
+
+#. ($roles, $role_name)
+#: lib/RT/Extension/MandatoryOnTransition.pm:763
+msgid "A member of group %1 is required for role: %2"
+msgstr "Un membre du groupe %1 est requi pour le rôle : %2"
+
+#. ($role->Name)
+#. (loc($role->Name))
+#: html/Callbacks/RT-Extension-MandatoryOnTransition/Ticket/Elements/EditBasics/MassageFields:45 html/Callbacks/RT-Extension-MandatoryOnTransition/Ticket/Update.html/AfterWorked:62
+msgid "Add %1"
+msgstr "Ajouter %1"
+
+#. ($role_name)
+#: lib/RT/Extension/MandatoryOnTransition.pm:572
+msgid "Could not load object for %1"
+msgstr "Impossible de charger l’objet pour %1"
+
+#. ($value)
+#: lib/RT/Extension/MandatoryOnTransition.pm:659 lib/RT/Extension/MandatoryOnTransition.pm:706 lib/RT/Extension/MandatoryOnTransition.pm:729
+msgid "Could not load user: %1"
+msgstr "Impossible de charger l’utilisateur : %1"
+
+#. ($role)
+#: lib/RT/Extension/MandatoryOnTransition.pm:627
+msgid "Failed to load role %1 for ticket"
+msgstr "Impossible de charger le rôle « %1 »"
 
